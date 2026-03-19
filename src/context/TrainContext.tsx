@@ -53,7 +53,10 @@ export function TrainProvider({ children }) {
           id,
           exercicio_id,
           series,
-          repeticoes
+          repeticoes,
+          exercicios (
+            nome
+          )
         )
       `
       )
