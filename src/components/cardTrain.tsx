@@ -33,10 +33,12 @@ export default function CardTrain({
     ? "border-green-500/50 bg-[#121212]"
     : "border-white/10 bg-[#121212] hover:border-green-500/50";
 
+  const bgStyle = concluido ? "bg-green-500/10"  : "bg-black-500" 
+
   return (
     <div
       onClick={() => navigate(`/treino/${route}`)}
-      className={`${cardStyle} relative  rounded-xl overflow-hidden p-6 cursor-pointer transition-all duration-75 hover:border border-[#22c55e]`}
+      className={` ${bgStyle} ${cardStyle} relative  rounded-xl overflow-hidden p-6 cursor-pointer transition-all duration-75 hover:border border-[#22c55e]`}
     >
       <div className="flex items-center justify-between mb-4 ">
         <h2 className="text-lg font-semibold text-white min-w-9">{nome}</h2>

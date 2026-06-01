@@ -2,21 +2,24 @@ import { Trash2, RotateCcw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "../supabase";
 import { useTrain } from "../context/TrainContext";
+import Loader from "../components/loader";
 
 export default function TrashPage() {
   const [lixeira, setLixeira] = useState([]);
+  const [ loading,setLoading] = useState(false)
   const { restaurarTreino, excluirDefinitivamente, listaTreinosSalvos } =
     useTrain();
 
   async function carregarLixeira() {
     console.log("lixeira renderizada");
+    setLoading(true)
     const { data } = await supabase
       .from("fichas")
       .select("*")
       .eq("deletado", true);
     setLixeira(data || []);
+    setLoading(false)
   }
-  carregarLixeira();
 
   async function handleDeletar(id) {
     await restaurarTreino(id);
@@ -30,10 +33,15 @@ export default function TrashPage() {
   }, []);
   return (
     <div className="min-h-screen bg-[#0e0e0e] p-6">
-      <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
+      <h1 className="mt-12 sm:mt-0 text-2xl font-bold mb-6 flex items-center gap-2">
         🗑️ Lixeira
       </h1>
-
+        <div className={` ${loading ? "w-full h-full" : ""} flex items-center text-center justify-center`}>
+       {
+      loading ? <Loader size="md"/>  : <span></span>
+      }
+     </div>
+   
       {lixeira.length === 0 ? (
         <div className="text-center text-white/50 mt-20">
           Nenhum item na lixeira

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "../supabase";
+import { toast } from "sonner";
 
 const TrainContext = createContext();
 export function TrainProvider({ children }) {
@@ -9,6 +10,7 @@ export function TrainProvider({ children }) {
   const [idSelecionado, setIdSelecionado] = useState(null);
   const [treinosDeletados, setTreinosDeletados] = useState();
   const [listaExerciciosDB, setListaExerciciosDB] = useState([]);
+  const [loading,setLoading] = useState(false)
   useEffect(() => {
     buscarTreinos();
     buscarTodosExercicios();
@@ -30,7 +32,6 @@ export function TrainProvider({ children }) {
       .eq("exercicio_id", exercicioId)
       .order("criada_em", { ascending: true });
 
-    // Formatar para o gráfico:
     return data.map((set) => ({
       data: new Date(set.criada_em).toLocaleDateString("pt-BR", {
         day: "2-digit",
@@ -154,9 +155,29 @@ export function TrainProvider({ children }) {
 
       await supabase
         .from("fichas")
-        .update({ concluido: false })
+        .update({ concluido: true })
         .eq("id", fichaId);
 
+        const { data: todosTreinos, error: errBusca } = await supabase
+        .from("fichas")
+        .select("id, concluido")
+        .eq("deletado", false);
+
+      if (errBusca) throw errBusca;
+      const todosConcluidos = todosTreinos.every(t => t.concluido === true);
+
+      if (todosConcluidos) {
+        console.log("🔥 Todos os treinos concluídos! Resetando ficha...");
+        
+        const { error: errReset } = await supabase
+          .from("fichas")
+          .update({ concluido: false })
+          .eq("deletado", false);
+
+        if (errReset) throw errReset;
+        
+        toast.success("✅ Ciclo de treinos resetado com sucesso!");
+      }
       await buscarTreinos();
       console.log("Histórico salvo com sucesso!");
     } catch (error) {
@@ -176,7 +197,7 @@ export function TrainProvider({ children }) {
   async function finalizarTreino(id) {
     const { error } = await supabase
       .from("fichas")
-      .update({ concluido: false })
+      .update({ concluido: true })
       .eq("id", id);
 
     if (error) {
@@ -204,8 +225,8 @@ export function TrainProvider({ children }) {
       .from("series_executadas")
       .select("peso, repeticoes, created_at")
       .eq("item_treino_id", itemTreinoId)
-      .order("created_at", { ascending: false }) // Pega o mais recente primeiro
-      .limit(1) // Queremos apenas o último
+      .order("created_at", { ascending: false })
+      .limit(1)
       .single();
 
     if (error || !data) return null;
@@ -235,6 +256,7 @@ export function TrainProvider({ children }) {
         finalizarTreinoComHistorico,
         buscarUltimaCarga,
         listaExerciciosDB,
+        loading,setLoading
       }}
     >
       {children}

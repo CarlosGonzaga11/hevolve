@@ -7,6 +7,7 @@ export default function User() {
       <div className="mt-12 px-6 ">
         <h1 className="uppercase text-3xl font-bold text-[#FAFAFA]">
           Meu perfil
+          
         </h1>
       </div>
       <div className="mt-8 flex w-full flex-col px-6 gap-2">

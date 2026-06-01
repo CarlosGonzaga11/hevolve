@@ -11,21 +11,44 @@ import {
 
 export default function GraficoEvolucao({ dados }) {
   useEffect(() => {
-    // Isso garante que o componente saiba que os dados chegaram
-    console.log("Gráfico renderizando com:", dados);
+    if (dados && dados.length > 0) {
+      console.log("Gráfico renderizando com:", dados.length, "pontos.");
+    }
   }, [dados]);
-  return (
-    <div
-      style={{ width: "100%", height: 300 }}
-      className="h-75 w-full bg-[#121212] border border-white/10 p-4 rounded-xl"
-    >
-      <h3 className="text-white font-medium mb-4 text-sm uppercase opacity-70">
-        Evolução de Carga (kg)
-      </h3>
 
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={dados}>
-          {/* Grade sutil ao fundo */}
+  let corDaLinha = "#22c55e"; 
+  if(dados.length === 1){
+    corDaLinha ="#BA8E23"
+  }
+
+  if (dados && dados.length >= 2) {
+    const ultimoPonto = dados[dados.length - 1].carga;
+    const penultimoPonto = dados[dados.length - 2].carga;
+
+    if (ultimoPonto < penultimoPonto) {
+      corDaLinha = "#ef4444"; 
+    }
+  }
+
+  return (
+    <div className="h-[300px] min-h-[300px] w-full bg-[#121212] border border-white/10 p-4 rounded-xl shadow-lg">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-white font-medium text-sm uppercase opacity-70">
+          Evolução de Carga (kg)
+        </h3>
+    {dados.length >= 2 ?   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+          corDaLinha === "#22c55e" ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"
+        }`}>
+          {corDaLinha === "#22c55e" ? "📈 PROGRESSÃO" : "📉 QUEDA DE CARGA"}
+        </span>
+        :
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-500">
+             📉Primeiro Treino
+            </span>}
+      </div>
+
+      <ResponsiveContainer width="100%" height="100%" debounce={50}>
+        <LineChart data={dados} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
           <CartesianGrid
             strokeDasharray="3 3"
             stroke="#ffffff10"
@@ -48,24 +71,24 @@ export default function GraficoEvolucao({ dados }) {
             axisLine={false}
           />
 
-          {/* Tooltip personalizado para combinar com seu app */}
           <Tooltip
             contentStyle={{
               backgroundColor: "#1a1a1a",
               border: "1px solid #333",
               borderRadius: "8px",
             }}
-            itemStyle={{ color: "#22c55e" }}
+            itemStyle={{ color: corDaLinha }}
             labelStyle={{ color: "#666" }}
           />
 
           <Line
             type="monotone"
             dataKey="carga"
-            stroke="#22c55e"
+            stroke={corDaLinha} 
             strokeWidth={3}
-            dot={{ r: 4, fill: "#22c55e", strokeWidth: 2, stroke: "#121212" }}
+            dot={{ r: 4, fill: corDaLinha, stroke: "#121212", strokeWidth: 2 }}
             activeDot={{ r: 6, strokeWidth: 0 }}
+            animationDuration={1000}
           />
         </LineChart>
       </ResponsiveContainer>

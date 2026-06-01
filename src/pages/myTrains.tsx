@@ -35,7 +35,6 @@ export default function MyTrains() {
             <ul style={{ listStyle: "none", padding: 0 }}>
               {treino.itens_treino.map((item) => (
                 <li key={item.id} style={{ fontSize: "14px", color: "#ccc" }}>
-                  {/* Aqui você pode cruzar o exercicio_id com sua lista de nomes */}
                   Exercicio ID: {item.exercicio_id} - {item.series}x
                   {item.repeticoes}
                 </li>

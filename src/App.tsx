@@ -6,17 +6,20 @@ import TreinoDetalhes from "./components/TreinoDetalhes";
 import User from "./pages/user";
 import TrashPage from "./pages/trash";
 import Progress from "./pages/progress";
+import { Toaster } from "sonner";
 
 export default function App() {
   return (
     <div>
+      <Toaster richColors />
       <Routes>
         <Route path="/" element={<Dashboard />}>
           <Route index element={<TrainingPage />} />
           <Route path="treino/:id" element={<TreinoDetalhes />} />
           <Route path="progress" element={<Progress />} />
           <Route path="create" element={<CreateTrain />} />
-          <Route path="user" element={<User />} />
+          <Route path="create" element={<CreateTrain />} />
+          <Route path="user" element={<User/>} />
           <Route path="lixeira" element={<TrashPage />} />
         </Route>
       </Routes>

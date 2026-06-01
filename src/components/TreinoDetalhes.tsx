@@ -1,17 +1,30 @@
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useTrain } from "../context/TrainContext";
 import { useState } from "react";
+import Loader from "./loader";
+import { toast, Toaster } from "sonner";
+import { processarConquistas } from "../logic/Archievements";
+import { supabase } from "../supabase";
 
 export default function TreinoDetalhes() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { listaTreinosSalvos, finalizarTreinoComHistorico } = useTrain();
-  
+  const {
+    listaTreinosSalvos,
+    finalizarTreinoComHistorico,
+    loading,
+    setLoading,
+  } = useTrain();
 
   const [valoresAtuais, setValoresAtuais] = useState({});
 
   const treino = listaTreinosSalvos.find((t) => Number(t.id) === Number(id));
-  console.log("treino",treino)
+  console.log("treino", treino);
+  window.onbeforeunload = function (e) {
+    e.preventDefault();
+    e.returnValue =
+      "Tem certeza que deseja sair? As alterações não salvas serão perdidas.";
+  };
 
   if (!treino)
     return <div className="text-white p-6">Treino não encontrado</div>;
@@ -30,14 +43,49 @@ export default function TreinoDetalhes() {
 
   const handleFinalizar = async () => {
     const dadosParaHistorico = Object.values(valoresAtuais);
+    const mapaNomes = {};
+    treino.itens_treino.forEach((item) => {
+      mapaNomes[item.id] = item.exercicios?.nome;
+    });
 
     if (dadosParaHistorico.length === 0) {
-      alert("Preencha pelo menos uma série!");
+      toast.error("Preencha pelo menos uma série!");
       return;
     }
+    try {
+      setLoading(true);
 
-    await finalizarTreinoComHistorico(treino.id, dadosParaHistorico);
-    navigate("/"); 
+      await finalizarTreinoComHistorico(treino.id, dadosParaHistorico);
+      const { count } = await supabase
+        .from("treinos_realizados")
+        .select("*", { count: "exact", head: true });
+
+      const novas = await processarConquistas(count || 0, dadosParaHistorico,mapaNomes);
+if (novas.length > 0) {
+  novas.forEach((msg) => {
+    if (msg.includes("menos")) {
+      // Se for aviso de peso menor, usa o toast de aviso
+      toast.warning(msg, {
+        description: "Mantenha o foco na progressão!",
+        duration: 5000,
+      });
+    } else {
+      // Se for conquista/recorde, usa o de sucesso
+      toast.success(msg, {
+        description: "Você superou seus limites!",
+        duration: 5000,
+      });
+    }
+  });
+}
+      toast.success("Treino Finalizado", { position: "top-center" });
+      navigate("/");
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao finalizar treino");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -56,7 +104,7 @@ export default function TreinoDetalhes() {
             className="bg-zinc-900 border border-white/10 rounded-2xl p-5"
           >
             <h3 className="text-xl font-bold text-green-400 mb-4">
-     {item.exercicios?.nome || "Exercício sem nome"}
+              {item.exercicios?.nome || "Exercício sem nome"}
             </h3>
 
             <div className="space-y-2">
@@ -85,7 +133,7 @@ export default function TreinoDetalhes() {
                           item.id,
                           numeroSerie,
                           "peso",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       className="bg-zinc-800 rounded-md py-2 px-3 text-sm outline-none focus:border-green-500 border border-transparent"
@@ -99,7 +147,7 @@ export default function TreinoDetalhes() {
                           item.id,
                           numeroSerie,
                           "repeticoes",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       className="bg-zinc-800 rounded-md py-2 px-3 text-sm outline-none focus:border-green-500 border border-transparent"
@@ -112,12 +160,13 @@ export default function TreinoDetalhes() {
         ))}
       </div>
 
-      <div className="fixed bottom-6 left-0 w-full px-6">
+      <div className=" bottom-6  w-full px-6">
         <button
           onClick={handleFinalizar}
+          disabled={loading}
           className="bg-green-500 text-black font-extrabold py-4 rounded-xl hover:bg-green-400 transition w-full shadow-lg shadow-green-500/20"
         >
-          FINALIZAR E SALVAR CARGAS
+          {loading ? <Loader /> : "FINALIZAR E SALVAR CARGAS"}
         </button>
       </div>
     </div>
