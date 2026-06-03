@@ -7,11 +7,34 @@ import {
   User,
   X,
 } from "lucide-react";
-import { useState } from "react";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { supabase } from "../supabase";
 
 export default function Dashboard() {
   const [open, setIsOpen] = useState(true);
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate()
+
+  async function handleLogout(){
+    const {error} = await supabase.auth.signOut();
+    if(error){
+      console.log(error)
+      return;
+    }
+    navigate("/registro")
+  }
+
+  useEffect(() => {
+    async function loadUser() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      console.log(user);
+      setUser(user);
+    }
+    loadUser();
+  }, []);
   return (
     <div className="text-white flex  ">
       {/* mobile */}
@@ -98,8 +121,9 @@ export default function Dashboard() {
         </button>
       )}
       {/* pc */}
-      <div className="hidden md:flex flex-col w-75 h-screen bg-[#121212] border-r border-r-[#D9D9D9]/10 ">
-        <Link
+      <div className="hidden md:flex flex-col w-75 justify-between h-screen bg-[#121212] border-r border-r-[#D9D9D9]/10 ">
+      <div>
+          <Link
           to="/"
           className="flex flex-row items-center gap-2 py-4 px-8 border-b border-b-[#D9D9D9]/10"
         >
@@ -164,6 +188,24 @@ export default function Dashboard() {
             </span>
             <span> Lixeira</span>
           </NavLink>
+          
+        </div>
+      </div>
+
+        <div >
+          {user && (
+            <div className="flex gap-4 items-center px-6 py-6">
+              <img
+                src={user.user_metadata.avatar_url}
+                alt="Perfil"
+                className="w-10 h-10 rounded-full"
+              />
+             <div className="flex flex-col items-left leading-none">
+               <span className="font-bold">{user.user_metadata.full_name}</span>
+               <span onClick={handleLogout} className="py-1 text-gray-400 cursor-pointer hover:text-red-500 transition-all duration-200">sair</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       <div className="flex flex-col  w-full h-screen overflow-y-auto">

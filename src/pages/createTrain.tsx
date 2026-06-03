@@ -90,7 +90,7 @@ export default function App() {
         </p>
       </div>
 
-      <div className="md:flex w-full">
+      <div className="flex flex-col md:flex md:flex-row w-full">
         <div className="w-full">
           <div className="flex flex-col px-6 mt-6 space-y-4  mx-6 bg-[#0f0f0f] border border-white/10 rounded-xl p-6">
             <span className="text-2xl font-bold text-[#22c55e]">
