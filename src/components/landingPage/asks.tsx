@@ -4,38 +4,39 @@ import { useState } from "react";
 const asks = [
   {
     id: 1,
-    question: "Preciso ter experiência para começar?",
+    question: "O Hevolve é gratuito?",
     answer:
-      "Não! Nossos treinos são adaptados para todos os níveis, do iniciante ao avançado.",
+      "Sim! Você pode começar gratuitamente e organizar seus treinos sem custo.",
   },
   {
     id: 2,
-    question: "Quantas vezes por semana devo treinar?",
-    answer: "O ideal é de 3 a 5 vezes por semana, dependendo do seu objetivo.",
+    question: "Posso criar mais de uma ficha de treino?",
+    answer:
+      "Sim. Crie diferentes fichas para cada objetivo, como hipertrofia, cardio ou treino funcional.",
   },
   {
     id: 3,
-    question: "Os treinos são feitos para academia ou casa?",
+    question: "Consigo acessar pelo celular?",
     answer:
-      "Ambos! Você pode escolher treinar com equipamentos de academia ou com opções para casa.",
+      "Sim. O Hevolve é responsivo e funciona perfeitamente em celulares, tablets e computadores.",
   },
   {
     id: 4,
-    question: "Como funciona o contato com o treinador?",
+    question: "Posso registrar cargas e repetições?",
     answer:
-      "Você tem acesso direto ao seu treinador pelo chat da plataforma, podendo tirar dúvidas a qualquer momento.",
+      "Sim. Registre suas cargas, séries e repetições para acompanhar sua evolução ao longo do tempo.",
   },
   {
     id: 5,
-    question: "De quanto em quanto tempo o treino é atualizado?",
+    question: "Meus dados ficam salvos?",
     answer:
-      "Depende do seu plano. No plano Básico é mensal, no Pro quinzenal e no Elite semanal",
+      "Sim. Todas as suas informações ficam armazenadas na sua conta para acesso a qualquer momento.",
   },
   {
     id: 6,
-    question: "Posso cancelar a qualquer momento?",
+    question: "Como acompanho meu progresso?",
     answer:
-      "Sim! Não há fidelidade. Você pode cancelar quando quiser, sem taxas extras.",
+      "Através de estatísticas, histórico de treinos e conquistas desbloqueadas conforme sua evolução.",
   },
 ];
 
@@ -46,12 +47,12 @@ export default function Asks() {
     setOpenAsk((prev) => (prev === id ? null : id));
   }
   return (
-    <section className="bg-[#121212]  ">
+    <section id="duvidas" className="bg-[#121212]  ">
       <div className="flex flex-col items-center">
-        <span className="text-[#4CAF50] uppercase tracking-[0.3em] font-semibold">
-          faq
+        <span className="text-[#4CAF50] uppercase tracking-widest font-semibold">
+          DÚVIDAS
         </span>
-        <h2 className="text-[#FFFFFF] text-5xl font-bold p-2">
+        <h2 className="text-[#FFFFFF] text-4xl sm:text-5xl font-bold p-2 text-center">
           PERGUNTAS FREQUENTES
         </h2>
       </div>
@@ -63,7 +64,13 @@ export default function Asks() {
               <div className="border border-[#B3B3B3]/10 px-6 relative rounded  bg-white/10 ">
                 <div onClick={() => handleOpenAsk(item.id)}>
                   <div className="absolute right-8 top-5">
-                    <ChevronDown size={14} color="#FAFAFA" />
+                    <ChevronDown
+                      size={14}
+                      color="#FAFAFA"
+                      className={`transition-transform duration-300 ${
+                        isOpen ? "rotate-180" : ""
+                      }`}
+                    />
                   </div>
                   <div className="p-4">
                     <span className="font-semibold text-[#FAFAFA] text-sm ">
@@ -88,7 +95,7 @@ export default function Asks() {
       <footer className="py-12 flex flex-col items-center justify-between md:flex-row md:justify-between md:text-left">
         <div className="flex gap-2 px-8">
           <Dumbbell color="#4CAF50" />
-          <span className="text-[#FAFAFA] text-lg">EVOLVE</span>
+          <span className="text-[#FAFAFA] text-lg">HEVOLVE</span>
         </div>
         <p className="px-8 text-sm text-[#B3B3B3]">
           © 2026 Evolve. Todos os direitos reservados.

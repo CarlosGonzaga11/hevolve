@@ -2,33 +2,30 @@ import { Dumbbell } from "lucide-react";
 
 export default function Header() {
   return (
-    <header className="flex border border-b-[#D9D9D9] justify-between px-6 py-4 bg-[#1C1C1C]">
-      <div className="flex flex-row items-center gap-2">
+    <header className="flex justify-between px-6 py-4 bg-[#4ADE80] shadow-sm ">
+      <div className="flex flex-row items-center gap-2 ">
         <span>
-          <Dumbbell size={24} color="#2E7D32" />
+          <Dumbbell size={24} color="#166534" />
         </span>
-        <span className="text-[#FAFAFA] text-2xl"> Evolve</span>
+        <span className="text-2xl font-bold text-[#111827]">HEVOLVE</span>
       </div>
-      <div className="sm:flex items-center hidden">
-        <nav className="flex gap-4 text-[#B3B3B3] transition-all duration-150">
-          <ul>
+      <div className="sm:flex items-center hidden ">
+        <nav className="flex gap-6 text-[#111827] font-medium">
+          <ul className="flex gap-6">
             <li>
-              <a className="hover:text-[#FAFAFA]">Como Funciona</a>
+              <a  href="#como-funciona"className="cursor-pointer  hover:text-[#064E3B] transition-colors duration-200">
+                Como Funciona
+              </a>
             </li>
-          </ul>
-          <ul>
             <li>
-              <a className="hover:text-[#FAFAFA]">Beneficios</a>
+              <a href="#beneficios" className="cursor-pointer hover:text-[#064E3B] transition-colors duration-200">
+                Beneficios
+              </a>
             </li>
-          </ul>
-          <ul>
             <li>
-              <a className="hover:text-[#FAFAFA]">Planos</a>
-            </li>
-          </ul>
-          <ul>
-            <li>
-              <a className="hover:text-[#FAFAFA]">FAQ</a>
+              <a href="#duvidas" className="cursor-pointer  hover:text-[#064E3B] transition-colors duration-200">
+                Dúvidas
+              </a>
             </li>
           </ul>
         </nav>

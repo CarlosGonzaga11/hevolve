@@ -1,0 +1,48 @@
+import { Dumbbell } from "lucide-react";
+import { supabase } from "../supabase";
+import { FcGoogle } from "react-icons/fc";
+
+export default function Register() {
+  async function signInWithGoogle() {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`,
+      },
+    });
+  }
+
+  return (
+    <div className="min-h-screen bg-[#121212] flex items-center justify-center px-4">
+      <div className="max-w-md w-full">
+        <div className="flex justify-center items-center gap-2 mb-8">
+          <Dumbbell size={32} color="#4ADE80" />
+          <h1 className="text-3xl font-bold text-white">HEVOLVE</h1>
+        </div>
+
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-md">
+          <h2 className="text-3xl font-bold text-white text-center">
+            Bem-vindo
+          </h2>
+
+          <p className="text-center text-[#B3B3B3] mt-2 mb-8">
+            Entre e acompanhe sua evolução nos treinos.
+          </p>
+
+          <button
+            onClick={signInWithGoogle}
+            className="cursor-pointer w-full flex items-center justify-center gap-3 bg-white text-gray-900 py-3 rounded-xl font-medium hover:bg-gray-100 transition"
+          >
+            <FcGoogle size={24} />
+            Continuar com Google
+          </button>
+
+          <p className="text-center text-xs text-[#B3B3B3] mt-6">
+            Ao continuar você concorda com os Termos de Uso e Política de
+            Privacidade.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}

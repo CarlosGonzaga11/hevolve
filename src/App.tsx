@@ -7,14 +7,18 @@ import User from "./pages/user";
 import TrashPage from "./pages/trash";
 import Progress from "./pages/progress";
 import { Toaster } from "sonner";
+import LandingPage from "./pages/landingPage";
+import Register from "./pages/criarConta";
 
 export default function App() {
   return (
     <div>
       <Toaster richColors />
       <Routes>
-        <Route path="/" element={<Dashboard />}>
-          <Route index element={<TrainingPage />} />
+        <Route path="/" element ={<LandingPage/>}/>
+                <Route path="/registro" element ={<Register/>}/>
+        <Route path="/dashboard" element={<Dashboard />}>
+          <Route path="treino" index element={<TrainingPage />} />
           <Route path="treino/:id" element={<TreinoDetalhes />} />
           <Route path="progress" element={<Progress />} />
           <Route path="create" element={<CreateTrain />} />

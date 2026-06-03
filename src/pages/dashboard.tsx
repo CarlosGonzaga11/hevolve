@@ -110,7 +110,7 @@ export default function Dashboard() {
         </Link>
         <div className="mt-8 text-base">
           <NavLink
-            to="/"
+            to="treino"
             className="flex items-center gap-4 px-8 hover:bg-[#22c55e] hover:text-[#f3f3f3]  py-3 "
           >
             <span>
@@ -119,7 +119,7 @@ export default function Dashboard() {
             <span> Treino</span>
           </NavLink>
           <NavLink
-            to="/progress"
+            to="progress"
             className="flex items-center gap-4 px-8 hover:bg-[#22c55e] hover:text-[#f3f3f3] py-3"
           >
             <span>

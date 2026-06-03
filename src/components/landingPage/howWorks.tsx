@@ -1,13 +1,13 @@
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, TrendingUp, User } from "lucide-react";
 
 export default function HowWorks() {
   return (
-    <section className="bg-[#121212] pb-20">
+    <section id="como-funciona" className="bg-[#121212] py-20">
       <div className="flex flex-col items-center">
-        <span className="text-[#4CAF50] uppercase tracking-[0.3em]">
+        <span className="text-[#4ADE80] uppercase tracking-widest mt-6">
           como funciona
         </span>
-        <h2 className="text-[#FFFFFF] text-5xl font-bold">
+        <h2 className="text-white text-3xl sm:text-5xl font-bold max-w-4xl px-4">
           3 PASSOS PARA EVOLUIR
         </h2>
       </div>
@@ -19,10 +19,12 @@ export default function HowWorks() {
           border border-white/20
           bg-white/10
           backdrop-blur-md
-          transition-all duration-300
           hover:border-primary/40
           hover:shadow-2xl
           z-10
+          transition-all duration-300
+          hover:-translate-y-1 
+
         "
         >
           <div className="absolute -top-4 right-6 font-heading text-6xl font-bold  z-0 text-[#4CAF50]/10  rounded-full px-4">
@@ -30,15 +32,15 @@ export default function HowWorks() {
           </div>
           <div className="pt-8 pl-8 pb-4 flex items-center">
             <span className="p-3 rounded bg-[#97eb9a]/10 ">
-              <ClipboardList size={28} color="#4CAF50" />
+              <User size={28} color="#4CAF50" />
             </span>
           </div>
           <span className="text-xl font-bold px-8 pb-1 text-[#FFFFFF]">
-            PREENCHA SEU PERFIL
+            CRIE SUA CONTA
           </span>
           <p className="text-sm px-8 pb-8 text-[#B3B3B3]">
-            Responda perguntas sobre seus objetivos, nível e rotina para
-            criarmos seu plano.
+            Cadastre-se em poucos segundos e personalize seu perfil com seus
+            objetivos, experiência e frequência de treinos.
           </p>
         </div>
         <div
@@ -48,14 +50,14 @@ export default function HowWorks() {
           border border-white/20
           bg-white/10
           backdrop-blur-md
-          transition-all duration-300
           hover:border-primary/40
           hover:shadow-2xl
           z-10
+           hover:-translate-y-1 transition-all duration-300
         "
         >
           <div className="absolute -top-4 right-6 font-heading text-6xl font-bold  z-0 text-[#4CAF50]/10 rounded-full px-4">
-            01
+            02
           </div>
           <div className="pt-8 pl-8 pb-4 flex items-center">
             <span className="p-3 rounded bg-[#97eb9a]/10 ">
@@ -63,11 +65,11 @@ export default function HowWorks() {
             </span>
           </div>
           <span className="text-xl font-bold px-8 pb-1 text-[#FFFFFF]">
-            PREENCHA SEU PERFIL
+            MONTE SEU TREINO
           </span>
           <p className="text-sm px-8 pb-8 text-[#B3B3B3]">
-            Responda perguntas sobre seus objetivos, nível e rotina para
-            criarmos seu plano.
+            Crie fichas personalizadas, organize exercícios, séries e repetições
+            de acordo com sua rotina.
           </p>
         </div>
         <div
@@ -77,26 +79,27 @@ export default function HowWorks() {
           border border-white/20
           bg-white/10
           backdrop-blur-md
-          transition-all duration-300
           hover:border-primary/40
           hover:shadow-2xl
           z-10
+          hover:-translate-y-1 transition-all duration-300
+
         "
         >
           <div className="absolute -top-4 right-6 font-heading text-6xl font-bold  z-0 text-[#4CAF50]/10 rounded-full px-4">
-            01
+            03
           </div>
           <div className="pt-8 pl-8 pb-4 flex items-center">
             <span className="p-3 rounded bg-[#97eb9a]/10 ">
-              <ClipboardList size={28} color="#4CAF50" />
+              <TrendingUp size={28} color="#4CAF50" />
             </span>
           </div>
           <span className="text-xl font-bold px-8 pb-1 text-[#FFFFFF]">
-            PREENCHA SEU PERFIL
+            ACOMPANHE SUA EVOLUÇÃO
           </span>
           <p className="text-sm px-8 pb-8 text-[#B3B3B3]">
-            Responda perguntas sobre seus objetivos, nível e rotina para
-            criarmos seu plano.
+            Registre seus treinos, acompanhe cargas, conquistas e veja seu
+            progresso ao longo do tempo.
           </p>
         </div>
       </div>
