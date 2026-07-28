@@ -15,7 +15,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Checa se já existe um usuário logado na sessão ao carregar o app
     async function obterSessaoInicial() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
