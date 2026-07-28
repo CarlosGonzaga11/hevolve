@@ -1,8 +1,20 @@
 import { Dumbbell } from "lucide-react";
 import { supabase } from "../supabase";
 import { FcGoogle } from "react-icons/fc";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { useEffect } from "react";
 
 export default function Register() {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && user) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, loading, navigate]);
+
   async function signInWithGoogle() {
     await supabase.auth.signInWithOAuth({
       provider: "google",
