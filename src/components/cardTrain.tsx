@@ -26,7 +26,7 @@ export default function CardTrain({
     e.stopPropagation();
     if (window.confirm("Deseja realmente mover este treino para a lixeira?")) {
       await deleteCardTreino(Number(id));
-      navigate("/"); // Volta para a tela inicial após excluir
+      navigate("/dashboard/treino"); // Volta para a tela inicial após excluir
     }
   }
   const cardStyle = concluido
@@ -37,12 +37,12 @@ export default function CardTrain({
 
   return (
     <div
-      onClick={() => navigate(`/treino/${route}`)}
+      onClick={() => navigate(`/dashboard/treino/${route}`)}
       className={` ${bgStyle} ${cardStyle} relative  rounded-xl overflow-hidden p-6 cursor-pointer transition-all duration-75 hover:border border-[#22c55e]`}
     >
       <div className="flex items-center justify-between mb-4 ">
         <h2 className="text-lg font-semibold text-white min-w-9">{nome}</h2>
-        <div>
+        <div  className="flex gap-2 items-center">
           <span
             className={`text-xs font-bold px-3 py-1 rounded-full ${
               concluido
@@ -54,7 +54,7 @@ export default function CardTrain({
           </span>
           <button
             onClick={handleExcluir}
-            className="text-red-400 hover:bg-red-400/10  rounded-full transition z-30 p-2"
+            className="text-red-400 hover:bg-red-400/10  rounded-full transition z-30 p-4 cursor-pointer "
           >
             <Trash2 size={14} />
           </button>

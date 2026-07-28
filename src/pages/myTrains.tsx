@@ -12,6 +12,7 @@ export default function MyTrains() {
     } else {
       setListaTreinosSalvos(data);
     }
+    console.log("cheguei aqui")
   }
 
   useEffect(() => {

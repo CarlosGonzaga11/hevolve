@@ -4,13 +4,16 @@ import "./index.css";
 import App from "./App";
 import { BrowserRouter } from "react-router-dom";
 import { TrainProvider } from "./context/TrainContext";
+import { AuthProvider } from "./context/AuthContext";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
+    <AuthProvider>
       <TrainProvider>
         <App />
       </TrainProvider>
+    </AuthProvider>
     </BrowserRouter>
   </StrictMode>
 );

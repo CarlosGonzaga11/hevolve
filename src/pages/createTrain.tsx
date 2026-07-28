@@ -5,11 +5,12 @@ import Loader from "../components/loader";
 import { toast } from "sonner";
 
 export default function App() {
-  const [exerciciosTreino, setExerciciosTreino] = useState([]); // Lista final da ficha
-  const [idSelecionado, setIdSelecionado] = useState(""); // Apenas o ID do select
+  const [exerciciosTreino, setExerciciosTreino] = useState([]);
+  const [nomeExercicioInput, setNomeExercicioInput] = useState(""); // Aceita texto digitado ou selecionado
   const [nomeTreino, setNomeTreino] = useState("");
   const [categoriaSelecionada, setCategoriaSelecionada] = useState("Todos");
   const [loaderButton, setLoaderButton] = useState(false);
+
   const categorias = [
     "Todos",
     "Peito",
@@ -29,39 +30,39 @@ export default function App() {
     repeticoes,
     listaExerciciosDB,
   } = useTrain();
+
   const exerciciosFiltrados = listaExerciciosDB.filter((ex) => {
     if (categoriaSelecionada === "Todos") return true;
     return ex.grupo_muscular === categoriaSelecionada;
   });
 
-  console.log("Essa eh a lista q ta no banco", listaExerciciosDB);
-
   function handleAddExercicio() {
-    if (!idSelecionado) return toast.error("Selecione um exercício primeiro");
+    const nomeFormatado = nomeExercicioInput.trim();
+    if (!nomeFormatado) return toast.error("Escreva ou selecione um exercício primeiro");
 
-    // Procura o exercício completo na lista que veio do banco
-    const exercicioCompleto = listaExerciciosDB.find(
-      (ex) => ex.id === Number(idSelecionado),
+    // Procura se o exercício digitado/selecionado já existe no banco
+    const exercicioExistente = listaExerciciosDB.find(
+      (ex) => ex.nome.toLowerCase() === nomeFormatado.toLowerCase()
     );
+    const grupoMuscular = categoriaSelecionada === "Todos" ? "Geral" : categoriaSelecionada;
+    const novoItem = {
+      // Se existir no banco pega o ID, senão envia null/undefined (o backend/context trata)
+      id: exercicioExistente ? exercicioExistente.id : null,
+      nome: nomeFormatado,
+      grupo_muscular: grupoMuscular,
+      series: Number(series),
+      repeticoes: Number(repeticoes),
+    };
 
-    if (exercicioCompleto) {
-      const novoItem = {
-        id: exercicioCompleto.id,
-        nome: exercicioCompleto.nome,
-        series: Number(series),
-        repeticoes: Number(repeticoes),
-      };
-
-      setExerciciosTreino([...exerciciosTreino, novoItem]);
-      setIdSelecionado(""); // Limpa o select após adicionar
-      toast.success("Exercicio adicionado");
-    }
+    setExerciciosTreino([...exerciciosTreino, novoItem]);
+    setNomeExercicioInput("");
+    toast.success("Exercício adicionado");
   }
 
   async function handleSaveFicha() {
     if (!nomeTreino || exerciciosTreino.length === 0)
       return toast.warning(
-        "Dê um nome ao treino e adicione pelo menos um exercício",
+        "Dê um nome ao treino e adicione pelo menos um exercício"
       );
 
     try {
@@ -92,7 +93,7 @@ export default function App() {
 
       <div className="flex flex-col md:flex md:flex-row w-full">
         <div className="w-full">
-          <div className="flex flex-col px-6 mt-6 space-y-4  mx-6 bg-[#0f0f0f] border border-white/10 rounded-xl p-6">
+          <div className="flex flex-col px-6 mt-6 space-y-4 mx-6 bg-[#0f0f0f] border border-white/10 rounded-xl p-6">
             <span className="text-2xl font-bold text-[#22c55e]">
               Crie sua ficha
             </span>
@@ -103,13 +104,14 @@ export default function App() {
               placeholder="Nome do treino (Ex: Treino A - Peito)"
               className="bg-zinc-900 text-white border border-white/10 focus:border-[#22c55e] focus:outline-none px-3 py-2 rounded"
             />
+
+            {/* Categorias de Filtro */}
             <div className="flex flex-wrap gap-2 mb-4">
               {categorias.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => {
                     setCategoriaSelecionada(cat);
-                    setIdSelecionado("");
                   }}
                   className={`px-3 py-1 rounded-full text-xs font-bold transition ${
                     categoriaSelecionada === cat
@@ -121,23 +123,24 @@ export default function App() {
                 </button>
               ))}
             </div>
+
+            {/* Input com Datalist (Texto Livre + Autocomplete) */}
             <div className="flex gap-2 w-full">
-              <select
-                className="bg-zinc-900 min-w-0
-             text-gray-300 border border-white/10 focus:border-[#22c55e] 
-             focus:outline-none px-3 py-2 rounded
-               overflow-hidden
-    text-ellipsis"
-                value={idSelecionado}
-                onChange={(e) => setIdSelecionado(e.target.value)}
-              >
-                <option value="">Selecione um exercício</option>
+              <input
+                list="opcoes-exercicios"
+                value={nomeExercicioInput}
+                onChange={(e) => setNomeExercicioInput(e.target.value)}
+                placeholder="Digite ou selecione um exercício..."
+                className="bg-zinc-900 w-full text-gray-300 border border-white/10 focus:border-[#22c55e] focus:outline-none px-3 py-2 rounded"
+              />
+
+              <datalist id="opcoes-exercicios">
                 {exerciciosFiltrados.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.nome} — {item.grupo_muscular}
+                  <option key={item.id} value={item.nome}>
+                    {item.grupo_muscular}
                   </option>
                 ))}
-              </select>
+              </datalist>
 
               <button
                 className="font-bold bg-[#22c55e] text-black px-4 py-2 rounded hover:bg-green-400 transition cursor-pointer"
@@ -178,13 +181,15 @@ export default function App() {
               onClick={handleSaveFicha}
             >
               {loaderButton ? (
-                <Loader />
+                <Loader size="sm" />
               ) : (
                 <p className="hover:text-black/80">Salvar Treino</p>
               )}
             </button>
           </div>
         </div>
+
+        {/* Lista Lateral */}
         <div className="max-w-xl mx-6 mt-8 bg-[#0f0f0f] border border-white/10 rounded-xl p-6">
           <p className="text-lg font-semibold text-white mb-4">
             Exercícios na ficha atual:

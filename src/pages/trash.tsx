@@ -1,47 +1,87 @@
 import { Trash2, RotateCcw } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../supabase";
 import { useTrain } from "../context/TrainContext";
 import Loader from "../components/loader";
+import { useAuth } from "../context/AuthContext";
+import { toast } from "sonner";
 
+
+interface FichaDeletada {
+  id: number | string;
+  nome: string;
+  deletado?: boolean;
+}
 export default function TrashPage() {
-  const [lixeira, setLixeira] = useState([]);
-  const [ loading,setLoading] = useState(false)
+  const [lixeira, setLixeira] = useState<FichaDeletada[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [actionLoadingId, setActionLoadingId] = useState<
+    number | string | null
+  >(null);
   const { restaurarTreino, excluirDefinitivamente, listaTreinosSalvos } =
     useTrain();
+  const { user } = useAuth();
 
-  async function carregarLixeira() {
-    console.log("lixeira renderizada");
-    setLoading(true)
-    const { data } = await supabase
-      .from("fichas")
-      .select("*")
-      .eq("deletado", true);
-    setLixeira(data || []);
-    setLoading(false)
+  const carregarLixeira = useCallback(
+    async function carregarLixeira() {
+      if (!user) return;
+      setLoading(true);
+      const { data } = await supabase
+        .from("fichas")
+        .select("*")
+        .eq("deletado", true)
+        .eq("user_id", user.id);
+      setLixeira(data || []);
+      setLoading(false);
+    },
+    [user],
+  );
+
+  async function handleRestaurar(id) {
+    try {
+      setActionLoadingId(id);
+      await restaurarTreino(id);
+      setLixeira((prev) => prev.filter((item) => item.id !== id));
+    } catch (err) {
+      console.error("Erro ao restaurar treino", err);
+    } finally {
+      setActionLoadingId(null);
+      toast.success("Treino restaurado")
+    }
   }
 
-  async function handleDeletar(id) {
-    await restaurarTreino(id);
-  }
+  async function handleDeleteCompletly(id: number | string) {
+    const confirmou = window.confirm(
+      "Tem certeza que deseja excluir este treino definitivamente? Esta ação não pode ser desfeita.",
+    );
+    if (!confirmou) return;
 
-  async function handleDeleteCompletly(id) {
-    await excluirDefinitivamente(id);
+    try {
+      setActionLoadingId(id);
+      await excluirDefinitivamente(id);
+      setLixeira((prev) => prev.filter((item) => item.id !== id));
+    } catch (err) {
+      console.error("Erro ao excluir definitivamente:", err);
+    } finally {
+      setActionLoadingId(null);
+            toast.success("Treino Deletado")
+     
+    }
   }
   useEffect(() => {
     carregarLixeira();
-  }, []);
+  }, [user]);
   return (
     <div className="min-h-screen bg-[#0e0e0e] p-6">
       <h1 className="mt-12 sm:mt-0 text-2xl font-bold mb-6 flex items-center gap-2">
         🗑️ Lixeira
       </h1>
-        <div className={` ${loading ? "w-full h-full" : ""} flex items-center text-center justify-center`}>
-       {
-      loading ? <Loader size="md"/>  : <span></span>
-      }
-     </div>
-   
+      <div
+        className={` ${loading ? "w-full h-full" : ""} flex items-center text-center justify-center`}
+      >
+        {loading ? <Loader size="md" /> : <span></span>}
+      </div>
+
       {lixeira.length === 0 ? (
         <div className="text-center text-white/50 mt-20">
           Nenhum item na lixeira
@@ -76,8 +116,9 @@ export default function TrashPage() {
                     bg-green-400/10
                     hover:bg-green-400/20
                     transition
+                    cursor-pointer
                   "
-                  onClick={() => handleDeletar(train.id)}
+                  onClick={() => handleRestaurar(train.id)}
                 >
                   <RotateCcw size={16} />
                   Restaurar
@@ -85,6 +126,7 @@ export default function TrashPage() {
 
                 <button
                   className="
+                  cursor-pointer
                     flex items-center gap-1
                     px-3 py-1.5
                     rounded-md

@@ -43,13 +43,13 @@ export default function HistoryTrain() {
   if (loading) return <div className="p-10 flex justify-center"><Loader /></div>;
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white p-6">
+    <div className="min-h-screen bg-zinc-950 text-white px-4">
       <h3 className="text-2xl font-bold mb-6">Histórico de Treinos</h3>
 
       {historico.length === 0 ? (
         <p className="text-zinc-500 text-center mt-10">Você ainda não realizou nenhum treino.</p>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2">
           {historico.map((log) => (
             <div 
               key={log.id} 

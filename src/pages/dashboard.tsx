@@ -58,7 +58,7 @@ export default function Dashboard() {
             </div>
             <nav className="flex flex-col gap-2">
               <NavLink
-                to="/"
+                to="/dashboard/treino"
                 onClick={() => setIsOpen(false)}
                 className="flex gap-3 p-2 hover:bg-[#22c55e] rounded"
               >
@@ -66,7 +66,7 @@ export default function Dashboard() {
               </NavLink>
 
               <NavLink
-                to="/progress"
+                to="/dashboard/progress"
                 onClick={() => setIsOpen(false)}
                 className="flex gap-3 p-2 hover:bg-[#22c55e] rounded"
               >
@@ -74,7 +74,7 @@ export default function Dashboard() {
               </NavLink>
 
               <NavLink
-                to="/create"
+                to="/dashboard/create"
                 onClick={() => setIsOpen(false)}
                 className="flex gap-3 p-2 hover:bg-[#22c55e] rounded"
               >
@@ -82,7 +82,7 @@ export default function Dashboard() {
               </NavLink>
 
               <NavLink
-                to="/create"
+                to="/dashboard/create"
                 onClick={() => setIsOpen(false)}
                 className="flex gap-3 p-2 hover:bg-[#22c55e] rounded"
               >
@@ -90,7 +90,7 @@ export default function Dashboard() {
               </NavLink>
 
               <NavLink
-                to="/user"
+                to="/dashboard/user"
                 onClick={() => setIsOpen(false)}
                 className="flex gap-3 p-2 hover:bg-[#22c55e] rounded"
               >
@@ -98,7 +98,7 @@ export default function Dashboard() {
               </NavLink>
 
               <NavLink
-                to="/lixeira"
+                to="/dashboard/lixeira"
                 onClick={() => setIsOpen(false)}
                 className="flex gap-3 p-2 hover:bg-[#22c55e] rounded"
               >

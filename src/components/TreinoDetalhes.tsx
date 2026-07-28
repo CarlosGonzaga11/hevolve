@@ -64,13 +64,11 @@ export default function TreinoDetalhes() {
 if (novas.length > 0) {
   novas.forEach((msg) => {
     if (msg.includes("menos")) {
-      // Se for aviso de peso menor, usa o toast de aviso
       toast.warning(msg, {
         description: "Mantenha o foco na progressão!",
         duration: 5000,
       });
     } else {
-      // Se for conquista/recorde, usa o de sucesso
       toast.success(msg, {
         description: "Você superou seus limites!",
         duration: 5000,
@@ -79,7 +77,7 @@ if (novas.length > 0) {
   });
 }
       toast.success("Treino Finalizado", { position: "top-center" });
-      navigate("/");
+      navigate("/dashboard/treino");
     } catch (err) {
       console.error(err);
       toast.error("Erro ao finalizar treino");
@@ -91,7 +89,7 @@ if (novas.length > 0) {
   return (
     <div className="min-h-screen bg-zinc-950 text-white p-6">
       <div className="mb-8">
-        <Link to="/" className="text-sm text-zinc-400 hover:text-white">
+        <Link to="/dashboard/treino" className="text-sm text-zinc-400 hover:text-white">
           ← Voltar
         </Link>
         <h1 className="text-4xl font-bold mt-2">{treino.nome}</h1>
@@ -166,7 +164,7 @@ if (novas.length > 0) {
           disabled={loading}
           className="bg-green-500 text-black font-extrabold py-4 rounded-xl hover:bg-green-400 transition w-full shadow-lg shadow-green-500/20"
         >
-          {loading ? <Loader /> : "FINALIZAR E SALVAR CARGAS"}
+          {loading ? <Loader size="sm" /> : "FINALIZAR E SALVAR CARGAS"}
         </button>
       </div>
     </div>
