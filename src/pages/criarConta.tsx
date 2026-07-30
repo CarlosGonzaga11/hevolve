@@ -12,7 +12,7 @@ export default function Register() {
 
   useEffect(() => {
     if (!loading && user) {
-      navigate("/dashboard", { replace: true });
+      navigate("/dashboard/treino", { replace: true });
     }
   }, [user, loading, navigate]);
 
