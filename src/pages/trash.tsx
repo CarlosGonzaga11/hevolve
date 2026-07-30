@@ -85,7 +85,7 @@ export default function TrashPage() {
         {loading ? <Loader size="md" /> : <span></span>}
       </div>
 
-      {lixeira.length === 0 ? (
+      {lixeira.length === 0 && !loading ? (
         <div className="text-center text-white/50 mt-20">
           Nenhum item na lixeira
         </div>
