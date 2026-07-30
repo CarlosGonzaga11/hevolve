@@ -60,22 +60,26 @@ export default function TreinoDetalhes() {
         .from("treinos_realizados")
         .select("*", { count: "exact", head: true });
 
-      const novas = await processarConquistas(count || 0, dadosParaHistorico,mapaNomes);
-if (novas.length > 0) {
-  novas.forEach((msg) => {
-    if (msg.includes("menos")) {
-      toast.warning(msg, {
-        description: "Mantenha o foco na progressão!",
-        duration: 5000,
-      });
-    } else {
-      toast.success(msg, {
-        description: "Você superou seus limites!",
-        duration: 5000,
-      });
-    }
-  });
-}
+      const novas = await processarConquistas(
+        count || 0,
+        dadosParaHistorico,
+        mapaNomes,
+      );
+      if (novas.length > 0) {
+        novas.forEach((msg) => {
+          if (msg.includes("menos")) {
+            toast.warning(msg, {
+              description: "Mantenha o foco na progressão!",
+              duration: 5000,
+            });
+          } else {
+            toast.success(msg, {
+              description: "Você superou seus limites!",
+              duration: 5000,
+            });
+          }
+        });
+      }
       toast.success("Treino Finalizado", { position: "top-center" });
       navigate("/dashboard/treino");
     } catch (err) {
@@ -89,7 +93,10 @@ if (novas.length > 0) {
   return (
     <div className="min-h-screen bg-zinc-950 text-white p-6">
       <div className="mb-8">
-        <Link to="/dashboard/treino" className="text-sm text-zinc-400 hover:text-white">
+        <Link
+          to="/dashboard/treino"
+          className="text-sm text-zinc-400 hover:text-white"
+        >
           ← Voltar
         </Link>
         <h1 className="text-4xl font-bold mt-2">{treino.nome}</h1>
@@ -158,11 +165,12 @@ if (novas.length > 0) {
         ))}
       </div>
 
-      <div className=" bottom-6  w-full px-6">
+      <div className="bottom-6  w-full px-6">
         <button
           onClick={handleFinalizar}
           disabled={loading}
-          className="bg-green-500 text-black font-extrabold py-4 rounded-xl hover:bg-green-400 transition w-full shadow-lg shadow-green-500/20"
+          className="cursor-pointer bg-green-500 text-black font-extrabold 
+          py-4 rounded-xl hover:bg-green-400 transition w-full shadow-lg shadow-green-500/20"
         >
           {loading ? <Loader size="sm" /> : "FINALIZAR E SALVAR CARGAS"}
         </button>
