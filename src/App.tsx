@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import Dashboard from "./pages/dashboard";
 import CreateTrain from "./pages/createTrain";
 import TrainingPage from "./pages/trainPage";
@@ -21,6 +21,7 @@ export default function App() {
 
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />}>
+            <Route index element={<Navigate to="treino" replace />} />
             <Route path="treino" index element={<TrainingPage />} />
             <Route path="treino/:id" element={<TreinoDetalhes />} />
             <Route path="progress" element={<Progress />} />
