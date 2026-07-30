@@ -38,15 +38,15 @@ export default function App() {
 
   function handleAddExercicio() {
     const nomeFormatado = nomeExercicioInput.trim();
-    if (!nomeFormatado) return toast.error("Escreva ou selecione um exercício primeiro");
+    if (!nomeFormatado)
+      return toast.error("Escreva ou selecione um exercício primeiro");
 
-    // Procura se o exercício digitado/selecionado já existe no banco
     const exercicioExistente = listaExerciciosDB.find(
-      (ex) => ex.nome.toLowerCase() === nomeFormatado.toLowerCase()
+      (ex) => ex.nome.toLowerCase() === nomeFormatado.toLowerCase(),
     );
-    const grupoMuscular = categoriaSelecionada === "Todos" ? "Geral" : categoriaSelecionada;
+    const grupoMuscular =
+      categoriaSelecionada === "Todos" ? "Geral" : categoriaSelecionada;
     const novoItem = {
-      // Se existir no banco pega o ID, senão envia null/undefined (o backend/context trata)
       id: exercicioExistente ? exercicioExistente.id : null,
       nome: nomeFormatado,
       grupo_muscular: grupoMuscular,
@@ -62,13 +62,13 @@ export default function App() {
   async function handleSaveFicha() {
     if (!nomeTreino || exerciciosTreino.length === 0)
       return toast.warning(
-        "Dê um nome ao treino e adicione pelo menos um exercício"
+        "Dê um nome ao treino e adicione pelo menos um exercício",
       );
 
     try {
       setLoaderButton(true);
       await salvarTreino(nomeTreino, exerciciosTreino);
-      toast.success("Treino salvo com sucesso!", { position: "top-center" });
+      toast.success("Treino salvo com sucesso!", { position: "bottom-center" });
 
       setExerciciosTreino([]);
       setNomeTreino("");

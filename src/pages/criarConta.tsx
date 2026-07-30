@@ -1,7 +1,7 @@
-import { Dumbbell, Loader2 } from "lucide-react";
+import { Dumbbell, Loader2, ArrowLeft } from "lucide-react";
 import { supabase } from "../supabase";
 import { FcGoogle } from "react-icons/fc";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useEffect, useState } from "react";
 
@@ -16,75 +16,100 @@ export default function Register() {
     }
   }, [user, loading, navigate]);
 
-  function signInWithGoogle() {
+  async function signInWithGoogle() {
     setIsAuthenticating(true);
-    setTimeout(async () => {
-      try {
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: {
-            redirectTo: `${window.location.origin}/hevolve/#/dashboard`,
-          },
-        });
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/hevolve/dashboard/treino `,
+        },
+      });
 
-        if (error) {
-          setIsAuthenticating(false);
-          console.error("Erro no login:", error.message);
-        }
-      } catch (err) {
+      if (error) {
         setIsAuthenticating(false);
-        console.error("Erro inesperado:", err);
+        console.error("Erro no login:", error.message);
       }
-    }, 600);
+    } catch (err) {
+      setIsAuthenticating(false);
+      console.error("Erro inesperado:", err);
+    }
   }
 
   if (loading) {
     return (
       <div className="min-h-screen bg-[#121212] flex flex-col items-center justify-center gap-3 text-white">
-        <Loader2 className="animate-spin text-[#4ADE80]" size={36} />
-        <p className="text-gray-400 text-sm">Validando sua sessão...</p>
+        <Loader2 className="animate-spin text-[#39FF14]" size={36} />
+        <p className="text-zinc-400 text-sm font-medium">
+          Validando sua sessão...
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#121212] flex items-center justify-center px-4">
-      <div className="max-w-md w-full">
-        <div className="flex justify-center items-center gap-2 mb-8">
-          <Dumbbell size={32} color="#4ADE80" />
-          <h1 className="text-3xl font-bold text-white">HEVOLVE</h1>
+    <div className="min-h-screen bg-[#121212] flex flex-col items-center justify-center px-4 relative overflow-hidden">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-[#39FF14]/10 rounded-full blur-[120px] pointer-events-none" />
+
+      <Link
+        to="/"
+        className="absolute top-6 left-6 flex items-center gap-2 text-zinc-400 hover:text-white transition-colors text-sm font-medium"
+      >
+        <ArrowLeft size={18} />
+        Voltar ao início
+      </Link>
+
+      <div className="max-w-md w-full relative z-10 flex flex-col items-center">
+        <div className="flex items-center gap-2 mb-8">
+          <div className="p-2 rounded-xl bg-[#39FF14]/10 border border-[#39FF14]/20 shadow-lg shadow-[#39FF14]/5">
+            <Dumbbell size={26} className="text-[#39FF14]" />
+          </div>
+          <span className="text-3xl font-black tracking-wider text-white">
+            HEVOLVE
+          </span>
         </div>
 
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-md">
-          <h2 className="text-3xl font-bold text-white text-center">
-            Bem-vindo
+        <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-md shadow-2xl">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white text-center">
+            Bem-vindo de volta!
           </h2>
 
-          <p className="text-center text-[#B3B3B3] mt-2 mb-8">
-            Entre e acompanhe sua evolução nos treinos.
+          <p className="text-center text-zinc-400 text-sm mt-2 mb-8">
+            Acesse sua conta para organizar seus treinos e acompanhar sua
+            evolução.
           </p>
 
           <button
             onClick={signInWithGoogle}
             disabled={isAuthenticating}
-            className="cursor-pointer w-full flex items-center justify-center gap-3 bg-white text-gray-900 py-3 rounded-xl font-medium hover:bg-gray-100 transition disabled:opacity-75 disabled:cursor-not-allowed"
+            className="cursor-pointer w-full flex items-center justify-center gap-3 bg-white hover:bg-zinc-100 text-zinc-900 py-3.5 px-4 rounded-xl font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed group"
           >
             {isAuthenticating ? (
               <>
-                <Loader2 className="animate-spin text-gray-900" size={22} />
-                Conectando ao Google...
+                <Loader2 className="animate-spin text-zinc-900" size={20} />
+                <span>Conectando ao Google...</span>
               </>
             ) : (
               <>
-                <FcGoogle size={24} />
-                Continuar com Google
+                <FcGoogle
+                  size={22}
+                  className="group-hover:scale-110 transition-transform"
+                />
+                <span>Continuar com Google</span>
               </>
             )}
           </button>
 
-          <p className="text-center text-xs text-[#B3B3B3] mt-6">
-            Ao continuar você concorda com os Termos de Uso e Política de
-            Privacidade.
+          <p className="text-center text-xs text-zinc-500 mt-6 leading-relaxed">
+            Ao continuar você concorda com nossos{" "}
+            <a href="#" className="underline hover:text-zinc-400">
+              Termos de Uso
+            </a>{" "}
+            e{" "}
+            <a href="#" className="underline hover:text-zinc-400">
+              Política de Privacidade
+            </a>
+            .
           </p>
         </div>
       </div>

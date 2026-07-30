@@ -6,7 +6,6 @@ import Loader from "../components/loader";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "sonner";
 
-
 interface FichaDeletada {
   id: number | string;
   nome: string;
@@ -46,7 +45,7 @@ export default function TrashPage() {
       console.error("Erro ao restaurar treino", err);
     } finally {
       setActionLoadingId(null);
-      toast.success("Treino restaurado")
+      toast.success("Treino restaurado");
     }
   }
 
@@ -64,18 +63,22 @@ export default function TrashPage() {
       console.error("Erro ao excluir definitivamente:", err);
     } finally {
       setActionLoadingId(null);
-            toast.success("Treino Deletado")
-     
+      toast.success("Treino Deletado");
     }
   }
   useEffect(() => {
     carregarLixeira();
   }, [user]);
   return (
-    <div className="min-h-screen bg-[#0e0e0e] p-6">
-      <h1 className="mt-12 sm:mt-0 text-2xl font-bold mb-6 flex items-center gap-2">
-        🗑️ Lixeira
-      </h1>
+    <div className="text-white flex flex-col w-full min-h-screen bg-black">
+      <div className="mt-12 px-6 flex justify-between items-end mb-4">
+        <div>
+          <h1 className="text-3xl uppercase font-bold tracking-tighter sm:mt-0  mt-6">
+            Lixeira
+          </h1>
+          <p className="text-zinc-500">Treinos deletados</p>
+        </div>
+      </div>
       <div
         className={` ${loading ? "w-full h-full" : ""} flex items-center text-center justify-center`}
       >
@@ -87,7 +90,7 @@ export default function TrashPage() {
           Nenhum item na lixeira
         </div>
       ) : (
-        <div className="grid gap-4 max-w-3xl">
+        <div className="grid px-6 gap-4 max-w-3xl">
           {lixeira.map((train) => (
             <div
               key={train.id}

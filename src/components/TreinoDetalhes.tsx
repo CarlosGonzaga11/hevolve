@@ -1,6 +1,6 @@
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useTrain } from "../context/TrainContext";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Loader from "./loader";
 import { toast, Toaster } from "sonner";
 import { processarConquistas } from "../logic/Archievements";
@@ -17,24 +17,36 @@ export default function TreinoDetalhes() {
   } = useTrain();
 
   const [valoresAtuais, setValoresAtuais] = useState({});
-
   const treino = listaTreinosSalvos.find((t) => Number(t.id) === Number(id));
-  console.log("treino", treino);
-  window.onbeforeunload = function (e) {
-    e.preventDefault();
-    e.returnValue =
-      "Tem certeza que deseja sair? As alterações não salvas serão perdidas.";
-  };
+  useEffect(() => {
+    const temDadosDigitados = Object.keys(valoresAtuais).length > 0;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (temDadosDigitados) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    if (temDadosDigitados) {
+      window.addEventListener("beforeunload", handleBeforeUnload);
+    }
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [valoresAtuais]);
 
   if (!treino)
     return <div className="text-white p-6">Treino não encontrado</div>;
 
   const handleInputChange = (itemId, serieNum, campo, valor) => {
+    const valorNumerico = Math.max(0, Number(valor) || 0);
     setValoresAtuais((prev) => ({
       ...prev,
       [`${itemId}-${serieNum}`]: {
         ...prev[`${itemId}-${serieNum}`],
-        [campo]: Number(valor),
+        [campo]: valorNumerico,
         item_treino_id: itemId,
         numero_serie: serieNum,
       },
@@ -56,9 +68,11 @@ export default function TreinoDetalhes() {
       setLoading(true);
 
       await finalizarTreinoComHistorico(treino.id, dadosParaHistorico);
-      const { count } = await supabase
+      const { data: { user } } = await supabase.auth.getUser();
+    const { count } = await supabase
         .from("treinos_realizados")
-        .select("*", { count: "exact", head: true });
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user?.id);
 
       const novas = await processarConquistas(
         count || 0,
@@ -70,17 +84,18 @@ export default function TreinoDetalhes() {
           if (msg.includes("menos")) {
             toast.warning(msg, {
               description: "Mantenha o foco na progressão!",
-              duration: 5000,
+              duration: 3500,
             });
           } else {
             toast.success(msg, {
               description: "Você superou seus limites!",
-              duration: 5000,
+              duration: 3500,
             });
           }
         });
       }
-      toast.success("Treino Finalizado", { position: "top-center" });
+      toast.success("Treino Finalizado", { position: "bottom-center" });
+      setValoresAtuais({});
       navigate("/dashboard/treino");
     } catch (err) {
       console.error(err);
@@ -103,7 +118,7 @@ export default function TreinoDetalhes() {
       </div>
 
       <div className="grid gap-6 mb-20">
-        {treino.itens_treino.map((item) => (
+        {treino.itens_treino.map((item:any) => (
           <div
             key={item.id}
             className="bg-zinc-900 border border-white/10 rounded-2xl p-5"

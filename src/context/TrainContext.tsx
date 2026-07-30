@@ -14,18 +14,21 @@ export function TrainProvider({ children }) {
   const [listaExerciciosDB, setListaExerciciosDB] = useState([]);
   const [loading, setLoading] = useState(false);
   useEffect(() => {
-    buscarTodosExercicios();
     if (user) {
+      buscarTodosExercicios();
       buscarTreinos();
     } else {
       setListaTreinosSalvos([]);
+      setListaExerciciosDB([]);
     }
   }, [user]);
 
   async function buscarTodosExercicios() {
+    if (!user) return;
     const { data, error } = await supabase
       .from("exercicios")
       .select("*")
+      .or(`user_id.is.null,user_id.eq.${user.id}`)
       .order("nome", { ascending: true });
 
     if (error) console.error("Erro ao carregar biblioteca:", error);
@@ -100,7 +103,7 @@ export function TrainProvider({ children }) {
       .from("fichas")
       .select("*")
       .eq("user_id", user.id)
-      .eq("deletado", true); // Busca apenas o que foi descartado
+      .eq("deletado", true);
 
     if (error) console.error("Erro ao buscar lixeira:", error);
     else setTreinosDeletados(data);
@@ -115,78 +118,74 @@ export function TrainProvider({ children }) {
     if (error) console.error("Erro ao atualizar série:", error);
   }
 
-async function salvarTreino(nome, itens) {
-  if (!user) {
-    toast.error("Você precisa estar logado para salvar um treino.");
-    return;
-  }
+  async function salvarTreino(nome, itens) {
+    if (!user) {
+      toast.error("Você precisa estar logado para salvar um treino.");
+      return;
+    }
 
-  const itensFormatados = await Promise.all(
-    itens.map(async (ex) => {
-      let exercicioId = ex.id;
+    const itensFormatados = await Promise.all(
+      itens.map(async (ex) => {
+        let exercicioId = ex.id;
 
-      if (!exercicioId) {
-        // Verifica se já existe um exercício com esse nome
-        const { data: existente } = await supabase
-          .from("exercicios")
-          .select("id")
-          .ilike("nome", ex.nome.trim())
-          .or(`user_id.is.null,user_id.eq.${user.id}`)
-          .maybeSingle();
-
-        if (existente) {
-          exercicioId = existente.id;
-        } else {
-          // Cria o novo exercício com a categoria correta enviada pelo usuário!
-          const { data: novoExercicio, error: errEx } = await supabase
+        if (!exercicioId) {
+          const { data: existente } = await supabase
             .from("exercicios")
-            .insert({
-              nome: ex.nome.trim(),
-              grupo_muscular: ex.grupo_muscular || "Geral", // 👈 PEGA A CATEGORIA SELECIONADA!
-              user_id: user.id,
-            })
             .select("id")
-            .single();
+            .ilike("nome", ex.nome.trim())
+            .or(`user_id.is.null,user_id.eq.${user.id}`)
+            .maybeSingle();
 
-          if (errEx) throw errEx;
-          exercicioId = novoExercicio.id;
+          if (existente) {
+            exercicioId = existente.id;
+          } else {
+            const { data: novoExercicio, error: errEx } = await supabase
+              .from("exercicios")
+              .insert({
+                nome: ex.nome.trim(),
+                grupo_muscular: ex.grupo_muscular || "Geral",
+                user_id: user.id,
+              })
+              .select("id")
+              .single();
+
+            if (errEx) throw errEx;
+            exercicioId = novoExercicio.id;
+          }
         }
-      }
 
-      return {
-        exercicio_id: exercicioId,
-        series: ex.series || series,
-        repeticoes: ex.repeticoes || repeticoes,
-      };
-    })
-  );
+        return {
+          exercicio_id: exercicioId,
+          series: ex.series || series,
+          repeticoes: ex.repeticoes || repeticoes,
+        };
+      }),
+    );
 
-  // 2. Cria a ficha no banco
-  const { data: ficha, error: errFicha } = await supabase
-    .from("fichas")
-    .insert([{ nome: nome, user_id: user.id }])
-    .select()
-    .single();
+    const { data: ficha, error: errFicha } = await supabase
+      .from("fichas")
+      .insert([{ nome: nome, user_id: user.id }])
+      .select()
+      .single();
 
-  if (errFicha) throw errFicha;
+    if (errFicha) throw errFicha;
 
-  // 3. Salva os itens
-  const itensParaSalvar = itensFormatados.map((item) => ({
-    ficha_id: ficha.id,
-    exercicio_id: item.exercicio_id,
-    user_id: user.id,
-    series: item.series,
-    repeticoes: item.repeticoes,
-  }));
+    const itensParaSalvar = itensFormatados.map((item) => ({
+      ficha_id: ficha.id,
+      exercicio_id: item.exercicio_id,
+      user_id: user.id,
+      series: item.series,
+      repeticoes: item.repeticoes,
+    }));
 
-  const { error: errItens } = await supabase
-    .from("itens_treino")
-    .insert(itensParaSalvar);
+    const { error: errItens } = await supabase
+      .from("itens_treino")
+      .insert(itensParaSalvar);
 
-  if (errItens) throw errItens;
+    if (errItens) throw errItens;
 
-  await buscarTreinos();
-}
+    await buscarTreinos();
+  }
   async function finalizarTreinoComHistorico(fichaId, dadosDasSeries) {
     if (!user) return;
     try {
@@ -299,7 +298,7 @@ async function salvarTreino(nome, itens) {
 
     await buscarTreinos();
     await buscarTreinosDeletados();
-    toast
+    toast;
   }
 
   async function buscarUltimaCarga(itemTreinoId) {

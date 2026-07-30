@@ -8,6 +8,7 @@ import Metric from "../components/cardMetric";
 import { Flame, Scale } from "lucide-react";
 import CardSemanal from "../components/cardSemanal";
 import { useAuth } from "../context/AuthContext";
+import AchievementList from "../components/ArchievementsList";
 
 interface Exercicio {
   id: number;
@@ -286,7 +287,7 @@ export default function Progress() {
         <h3 className="mt-10 mb-4 text-3xl font-semibold uppercase">
           Métricas
         </h3>
-
+   
         {/* Métricas */}
         <div className="grid grid-cols-2 gap-2">
           <Metric
@@ -301,7 +302,7 @@ export default function Progress() {
           />
         </div>
 
-        {/* Comparação Semanal (Em breve) */}
+        {/* Comparação Semanal */}
         <div className="mt-6 mb-12 relative">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm w-full h-full text-[#22c55e] font-bold text-4xl text-center items-center flex justify-center rounded z-10 animate-pulse">
             EM BREVE...
@@ -315,6 +316,7 @@ export default function Progress() {
           </div>
         </div>
         <div>
+              <AchievementList/>
           <HistoryTrain />
         </div>
       </div>

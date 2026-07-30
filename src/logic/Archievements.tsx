@@ -1,44 +1,74 @@
 import { supabase } from "../supabase";
 
-export const METAS_ESTATICAS = [
-  { chave: 'treino_1', nome: 'Recruta', objetivo: 1, tipo: 'volume', icone: '🥉' },
-  { chave: 'treino_10', nome: 'Constante', objetivo: 10, tipo: 'volume', icone: '🥈' },
-  { chave: 'treino_50', nome: 'Veterano', objetivo: 50, tipo: 'volume', icone: '🥇' },
-];
+export interface Meta {
+  chave: string;
+  nome: string;
+  objetivo: number;
+  tipo: "treinos" | "outros";
+  icone: string;
+  descricao: string;
+  escondida?: boolean;
+}
 
-/**
- * Processa as conquistas comparando o treino atual com o histórico
- */
-export async function processarConquistas(
-  totalTreinos: number, 
-  seriesDoTreino: any[], 
-  nomesExercicios: Record<number, string>
+export const METAS_ESTATICAS: Meta[] = [
+  // Visible / Padrão
+  { chave: "treino_1", nome: "Recruta", objetivo: 1, tipo: "treinos", icone: "🥉", descricao: "Conclua 1 treino" },
+  { chave: "treino_10", nome: "Constante", objetivo: 10, tipo: "treinos", icone: "🥈", descricao: "Conclua 10 treinos" },
+  { chave: "treino_50", nome: "Veterano", objetivo: 50, tipo: "treinos", icone: "🥇", descricao: "Conclua 50 treinos" },
+
+  // Escondidas / Secretas (Só revelam quando unlocked)
+  { chave: "supino_100", nome: "Clube dos 100kg", objetivo: 100, tipo: "especial", icone: "🏋️‍♂️", descricao: "Levantou 100kg em um exercício", escondida: true },
+  { chave: "peso_1t", nome: "Levantador de Fusca", objetivo: 1000, tipo: "volume", icone: "🚗", descricao: "1.000 kg acumulados", escondida: true },
+  { chave: "superou_limite", nome: "PR Quebrado!", objetivo: 1, tipo: "especial", icone: "💥", descricao: "Bateu um recorde pessoal", escondida: true },
+]
+  export async function processarConquistas(
+  totalTreinos: number,
+  seriesDoTreino: any[],
+  nomesExercicios: Record<number, string>,
 ) {
-  const novasConquistas = [];
+  const novasConquistas: string[] = [];
 
-  // --- 1. Lógica de Volume (Metas Estáticas) ---
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return novasConquistas;
+
+  // --- 1. Lógica de Metas de Treino ---
   for (const meta of METAS_ESTATICAS) {
-    if (meta.tipo === 'volume' && totalTreinos >= meta.objetivo) {
-      const ganhou = await salvarConquistaSeNaoExistir(meta.chave);
+    if (meta.tipo === "treinos" && totalTreinos >= meta.objetivo) {
+      const ganhou = await salvarConquistaSeNaoExistir(meta.chave, user.id);
       if (ganhou) novasConquistas.push(meta.nome);
     }
   }
 
-// --- 2. Lógica de PR (Recorde Pessoal) ---
-// --- 2. Lógica de PR (Recorde Pessoal) ---
-// --- 2. Lógica de PR (Recorde Pessoal) ---
-// --- 2. Lógica de PR e Alertas de Carga ---
-  const idsNoTreino = [...new Set(seriesDoTreino.map(s => s.item_treino_id))];
+  // --- 2. Lógica de PR e Conquistas de Carga (Ex: 100kg) ---
+  const idsNoTreino = [...new Set(seriesDoTreino.map((s) => s.item_treino_id))];
 
   for (const id of idsNoTreino) {
-    const seriesDesteItem = seriesDoTreino.filter(s => s.item_treino_id === id);
-    const maiorPesoHoje = Math.max(...seriesDesteItem.map(s => s.peso || 0));
+    const seriesDesteItem = seriesDoTreino.filter(
+      (s) => s.item_treino_id === id,
+    );
+    const maiorPesoHoje = Math.max(...seriesDesteItem.map((s) => s.peso || 0));
 
     if (maiorPesoHoje === 0) continue;
 
+    // ✅ VERIFICAÇÃO DO CLUBE DOS 100KG
+    if (maiorPesoHoje >= 100) {
+      const ganhou100kg = await salvarConquistaSeNaoExistir(
+        "supino_100",
+        user.id,
+        {
+          peso: maiorPesoHoje,
+          item_id: id,
+        },
+      );
+      if (ganhou100kg) {
+        novasConquistas.push("🏋️‍♂️ Entrou para o Clube dos 100kg!");
+      }
+    }
+
     const agoraMesmo = new Date(Date.now() - 5000).toISOString();
 
-    // Buscamos o maior peso registrado ANTES de agora
     const { data: recordes } = await supabase
       .from("series_executadas")
       .select("peso")
@@ -50,35 +80,43 @@ export async function processarConquistas(
     const recordeAnterior = recordes?.[0]?.peso || 0;
     const nomeExercicio = nomesExercicios[id] || "Exercício";
 
-    // CASO 1: Bateu o Recorde (Peso Maior)
-    if (maiorPesoHoje > recordeAnterior && recordeAnterior > 0) {
+    // ✅ CORREÇÃO DE PR: Aceita se for maior que o anterior OU se for o 1º treino (recordeAnterior === 0)
+    if (maiorPesoHoje > recordeAnterior) {
+      // Salva o PR dinâmico do exercício
       const chavePR = `pr_item_${id}_${maiorPesoHoje}`;
-      const ganhou = await salvarConquistaSeNaoExistir(chavePR, { 
-        tipo: 'PR', item_id: id, nome: nomeExercicio, peso: maiorPesoHoje 
+      await salvarConquistaSeNaoExistir(chavePR, user.id, {
+        tipo: "PR",
+        item_id: id,
+        nome: nomeExercicio,
+        peso: maiorPesoHoje,
       });
-      
-      if (ganhou) {
-        novasConquistas.push(`🏆 Novo recorde no ${nomeExercicio}: ${maiorPesoHoje}kg!`);
+
+      // Salva a conquista estática de "PR Quebrado" caso já existisse um histórico
+      if (recordeAnterior > 0) {
+        const ganhouPR = await salvarConquistaSeNaoExistir(
+          "superou_limite",
+          user.id,
+        );
+        if (ganhouPR) {
+          novasConquistas.push(
+            `🏆 Novo recorde no ${nomeExercicio}: ${maiorPesoHoje}kg!`,
+          );
+        }
       }
-    } 
-    // CASO 2: Abaixou o peso (Aviso)
-    else if (maiorPesoHoje < recordeAnterior && recordeAnterior > 0) {
-      // Aqui não salvamos no banco, apenas enviamos para o array de mensagens
-      // Usamos um prefixo diferente para tratar no Toast depois, se quiser
-      novasConquistas.push(`Atenção no ${nomeExercicio}: Você usou menos peso que o seu recorde (${recordeAnterior}kg).`);
     }
   }
+
   return novasConquistas;
 }
-
-/**
- * Salva no banco apenas se a conquista for inédita
- */
-async function salvarConquistaSeNaoExistir(chave: string, metadados: any = {}) {
-  // Verificação prévia para evitar erros de duplicata no console
+async function salvarConquistaSeNaoExistir(
+  chave: string,
+  userId: string,
+  metadados: any = {},
+) {
   const { data: existe } = await supabase
     .from("conquistas_desbloqueadas")
     .select("chave_conquista")
+    .eq("user_id", userId)
     .eq("chave_conquista", chave)
     .maybeSingle();
 
@@ -86,17 +124,14 @@ async function salvarConquistaSeNaoExistir(chave: string, metadados: any = {}) {
 
   const { error } = await supabase
     .from("conquistas_desbloqueadas")
-    .insert([{ 
-        chave_conquista: chave, 
-        metadados: metadados 
-    }]);
+    .insert([{ user_id: userId, chave_conquista: chave, metadados }]);
 
   if (error) {
-    if (error.code !== '23505') { 
-       console.error("Erro real no Supabase:", error.message);
+    if (error.code !== "23505") {
+      console.error("Erro real no Supabase:", error.message);
     }
     return false;
   }
 
-  return true; 
+  return true;
 }

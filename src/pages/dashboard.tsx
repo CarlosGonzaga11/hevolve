@@ -14,15 +14,15 @@ import { supabase } from "../supabase";
 export default function Dashboard() {
   const [open, setIsOpen] = useState(true);
   const [user, setUser] = useState(null);
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
-  async function handleLogout(){
-    const {error} = await supabase.auth.signOut();
-    if(error){
-      console.log(error)
+  async function handleLogout() {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.log(error);
       return;
     }
-    navigate("/registro")
+    navigate("/registro");
   }
 
   useEffect(() => {
@@ -122,36 +122,36 @@ export default function Dashboard() {
       )}
       {/* pc */}
       <div className="hidden md:flex flex-col w-75 justify-between h-screen bg-[#121212] border-r border-r-[#D9D9D9]/10 ">
-      <div>
+        <div>
           <Link
-          to="/"
-          className="flex flex-row items-center gap-2 py-4 px-8 border-b border-b-[#D9D9D9]/10"
-        >
-          <span>
-            <Dumbbell color="#22c55e" className="w-10 h-10" />
-          </span>
-          <span className="uppercase  text-2xl"> hevolve</span>
-        </Link>
-        <div className="mt-8 text-base">
-          <NavLink
-            to="treino"
-            className="flex items-center gap-4 px-8 hover:bg-[#22c55e] hover:text-[#f3f3f3]  py-3 "
+            to="/"
+            className="flex flex-row items-center gap-2 py-4 px-8 border-b border-b-[#D9D9D9]/10"
           >
             <span>
-              <Dumbbell size={22} />
+              <Dumbbell color="#22c55e" className="w-10 h-10" />
             </span>
-            <span> Treino</span>
-          </NavLink>
-          <NavLink
-            to="progress"
-            className="flex items-center gap-4 px-8 hover:bg-[#22c55e] hover:text-[#f3f3f3] py-3"
-          >
-            <span>
-              <BarChart3 size={22} />
-            </span>
-            <span> Progresso</span>
-          </NavLink>
-          {/* <NavLink
+            <span className="uppercase  text-2xl"> hevolve</span>
+          </Link>
+          <div className="mt-8 text-base">
+            <NavLink
+              to="treino"
+              className="flex items-center gap-4 px-8 hover:bg-[#22c55e] hover:text-[#f3f3f3]  py-3 "
+            >
+              <span>
+                <Dumbbell size={22} />
+              </span>
+              <span> Treino</span>
+            </NavLink>
+            <NavLink
+              to="progress"
+              className="flex items-center gap-4 px-8 hover:bg-[#22c55e] hover:text-[#f3f3f3] py-3"
+            >
+              <span>
+                <BarChart3 size={22} />
+              </span>
+              <span> Progresso</span>
+            </NavLink>
+            {/* <NavLink
             to="create"
             className="flex items-center gap-4 px-8 hover:bg-[#22c55e] hover:text-[#f3f3f3] py-3"
           >
@@ -160,39 +160,38 @@ export default function Dashboard() {
             </span>
             <span> Chat</span>
           </NavLink> */}
-          <NavLink
-            to="create"
-            className="flex items-center gap-4 px-8 hover:bg-[#22c55e] hover:text-[#f3f3f3] py-3"
-          >
-            <span>
-              <FilePlus size={22} />
-            </span>
-            <span> Criar Treino</span>
-          </NavLink>
+            <NavLink
+              to="create"
+              className="flex items-center gap-4 px-8 hover:bg-[#22c55e] hover:text-[#f3f3f3] py-3"
+            >
+              <span>
+                <FilePlus size={22} />
+              </span>
+              <span> Criar Treino</span>
+            </NavLink>
 
-          <NavLink
-            to="user"
-            className="flex items-center gap-4 px-8 hover:bg-[#22c55e] hover:text-[#f3f3f3] py-3"
-          >
-            <span>
-              <User size={22} />
-            </span>
-            <span> Perfil</span>
-          </NavLink>
-          <NavLink
-            to="lixeira"
-            className="flex items-center  gap-4 px-8 hover:bg-[#22c55e] hover:text-[#f3f3f3] py-3"
-          >
-            <span>
-              <Trash size={22} />
-            </span>
-            <span> Lixeira</span>
-          </NavLink>
-          
+            <NavLink
+              to="user"
+              className="flex items-center gap-4 px-8 hover:bg-[#22c55e] hover:text-[#f3f3f3] py-3"
+            >
+              <span>
+                <User size={22} />
+              </span>
+              <span> Perfil</span>
+            </NavLink>
+            <NavLink
+              to="lixeira"
+              className="flex items-center  gap-4 px-8 hover:bg-[#22c55e] hover:text-[#f3f3f3] py-3"
+            >
+              <span>
+                <Trash size={22} />
+              </span>
+              <span> Lixeira</span>
+            </NavLink>
+          </div>
         </div>
-      </div>
 
-        <div >
+        <div>
           {user && (
             <div className="flex gap-4 items-center px-6 py-6">
               <img
@@ -200,9 +199,16 @@ export default function Dashboard() {
                 alt="Perfil"
                 className="w-10 h-10 rounded-full"
               />
-             <div className="flex flex-col items-left leading-none">
-               <span className="font-bold">{user.user_metadata.full_name}</span>
-               <span onClick={handleLogout} className="py-1 text-gray-400 cursor-pointer hover:text-red-500 transition-all duration-200">sair</span>
+              <div className="flex flex-col items-left leading-none">
+                <span className="font-bold">
+                  {user.user_metadata.full_name}
+                </span>
+                <span
+                  onClick={handleLogout}
+                  className="py-1 text-gray-400 cursor-pointer hover:text-red-500 transition-all duration-200"
+                >
+                  sair
+                </span>
               </div>
             </div>
           )}

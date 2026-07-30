@@ -1,106 +1,73 @@
 import { ClipboardList, TrendingUp, User } from "lucide-react";
 
 export default function HowWorks() {
+  const steps = [
+    {
+      step: "01",
+      icon: <User size={26} className="text-[#39FF14]" />,
+      title: "CRIE SUA CONTA",
+      description:
+        "Cadastre-se em poucos segundos e personalize seu perfil com seus objetivos, experiência e frequência de treinos.",
+    },
+    {
+      step: "02",
+      icon: <ClipboardList size={26} className="text-[#39FF14]" />,
+      title: "MONTE SEU TREINO",
+      description:
+        "Crie fichas personalizadas, organize exercícios, séries e repetições de acordo com a sua rotina.",
+    },
+    {
+      step: "03",
+      icon: <TrendingUp size={26} className="text-[#39FF14]" />,
+      title: "ACOMPANHE SUA EVOLUÇÃO",
+      description:
+        "Registre seus treinos, acompanhe cargas, histórico e veja seu progresso real ao longo do tempo.",
+    },
+  ];
+
   return (
-    <section id="como-funciona" className="bg-[#121212] py-20">
-      <div className="flex flex-col items-center">
-        <span className="text-[#4ADE80] uppercase tracking-widest mt-6">
-          como funciona
-        </span>
-        <h2 className="text-white text-3xl sm:text-5xl font-bold max-w-4xl px-4">
-          3 PASSOS PARA EVOLUIR
-        </h2>
-      </div>
-      <div className=" mt-14 grid sm:grid-cols-3 gap-4 px-4 grid-cols-1">
-        <div
-          className="
-          group relative
-          rounded-xl
-          border border-white/20
-          bg-white/10
-          backdrop-blur-md
-          hover:border-primary/40
-          hover:shadow-2xl
-          z-10
-          transition-all duration-300
-          hover:-translate-y-1 
+    <section
+      id="como-funciona"
+      className="bg-[#121212] py-24 border-t border-white/5 relative"
+    >
+      <div className="max-w-7xl mx-auto px-6">
+        {/* Cabeçalho */}
+        <div className="flex flex-col items-center text-center mb-16">
+          <span className="inline-block px-3 py-1 rounded-full bg-[#39FF14]/10 text-[#39FF14] text-xs font-bold tracking-widest uppercase mb-4 border border-[#39FF14]/20">
+            Como Funciona
+          </span>
 
-        "
-        >
-          <div className="absolute -top-4 right-6 font-heading text-6xl font-bold  z-0 text-[#4CAF50]/10  rounded-full px-4">
-            01
-          </div>
-          <div className="pt-8 pl-8 pb-4 flex items-center">
-            <span className="p-3 rounded bg-[#97eb9a]/10 ">
-              <User size={28} color="#4CAF50" />
-            </span>
-          </div>
-          <span className="text-xl font-bold px-8 pb-1 text-[#FFFFFF]">
-            CRIE SUA CONTA
-          </span>
-          <p className="text-sm px-8 pb-8 text-[#B3B3B3]">
-            Cadastre-se em poucos segundos e personalize seu perfil com seus
-            objetivos, experiência e frequência de treinos.
-          </p>
+          <h2 className="text-white text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight">
+            3 PASSOS PARA <span className="text-[#39FF14]">EVOLUIR</span>
+          </h2>
         </div>
-        <div
-          className="
-          group relative
-          rounded-xl
-          border border-white/20
-          bg-white/10
-          backdrop-blur-md
-          hover:border-primary/40
-          hover:shadow-2xl
-          z-10
-           hover:-translate-y-1 transition-all duration-300
-        "
-        >
-          <div className="absolute -top-4 right-6 font-heading text-6xl font-bold  z-0 text-[#4CAF50]/10 rounded-full px-4">
-            02
-          </div>
-          <div className="pt-8 pl-8 pb-4 flex items-center">
-            <span className="p-3 rounded bg-[#97eb9a]/10 ">
-              <ClipboardList size={28} color="#4CAF50" />
-            </span>
-          </div>
-          <span className="text-xl font-bold px-8 pb-1 text-[#FFFFFF]">
-            MONTE SEU TREINO
-          </span>
-          <p className="text-sm px-8 pb-8 text-[#B3B3B3]">
-            Crie fichas personalizadas, organize exercícios, séries e repetições
-            de acordo com sua rotina.
-          </p>
-        </div>
-        <div
-          className="
-          group relative
-          rounded-xl
-          border border-white/20
-          bg-white/10
-          backdrop-blur-md
-          hover:border-primary/40
-          hover:shadow-2xl
-          z-10
-          hover:-translate-y-1 transition-all duration-300
 
-        "
-        >
-          <div className="absolute -top-4 right-6 font-heading text-6xl font-bold  z-0 text-[#4CAF50]/10 rounded-full px-4">
-            03
-          </div>
-          <div className="pt-8 pl-8 pb-4 flex items-center">
-            <span className="p-3 rounded bg-[#97eb9a]/10 ">
-              <TrendingUp size={28} color="#4CAF50" />
-            </span>
-          </div>
-          <span className="text-xl font-bold px-8 pb-1 text-[#FFFFFF]">
-            ACOMPANHE SUA EVOLUÇÃO
-          </span>
-          <p className="text-sm px-8 pb-8 text-[#B3B3B3]">
-            Registre seus treinos, acompanhe cargas, conquistas e veja seu
-            progresso ao longo do tempo.
-          </p>
+        {/* Grid de Passos */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {steps.map((item) => (
+            <div
+              key={item.step}
+              className="group relative rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-8 transition-all duration-300 hover:border-[#39FF14]/40 hover:bg-white/[0.07] hover:-translate-y-1 overflow-hidden"
+            >
+              {/* Número Destaque de Fundo */}
+              <span className="absolute -top-2 right-4 text-7xl font-black text-white/[0.04] group-hover:text-[#39FF14]/10 transition-colors duration-300 select-none pointer-events-none">
+                {item.step}
+              </span>
+
+              {/* Ícone */}
+              <div className="w-12 h-12 rounded-xl bg-[#39FF14]/10 border border-[#39FF14]/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                {item.icon}
+              </div>
+
+              {/* Conteúdo */}
+              <h3 className="text-xl font-bold text-white mb-3 tracking-wide">
+                {item.title}
+              </h3>
+              <p className="text-zinc-400 text-sm leading-relaxed">
+                {item.description}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </section>
