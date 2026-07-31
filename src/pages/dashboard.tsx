@@ -220,12 +220,13 @@ export default function Dashboard() {
               <span className="font-bold truncate max-w-[120px]">
                 {user.user_metadata?.full_name || "Usuário"}
               </span>
-              <button
-                onClick={handleLogout}
-                className="py-1 text-gray-400 cursor-pointer hover:text-red-500 transition-all duration-200 text-xs"
-              >
-                sair
-              </button>
+               <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded transition-colors border border-red-500/20 text-sm font-medium"
+                >
+                  <LogOut size={16} />
+                  <span>Desconectar</span>
+                </button>
             </div>
           </div>
         )}
