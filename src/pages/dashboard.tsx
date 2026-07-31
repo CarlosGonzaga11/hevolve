@@ -205,7 +205,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Rodapé Desktop */}
         {user && (
           <div className="flex gap-4 items-center px-6 py-6 border-t border-white/10">
             <img
@@ -216,13 +215,13 @@ export default function Dashboard() {
               alt="Perfil"
               className="w-10 h-10 rounded-full border border-white/10 object-cover"
             />
-            <div className="flex flex-col items-start leading-none overflow-hidden">
+            <div className="flex flex-col items-start leading-none overflow-hidden gap-2">
               <span className="font-bold truncate max-w-[120px]">
                 {user.user_metadata?.full_name || "Usuário"}
               </span>
                <button
                   onClick={handleLogout}
-                  className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded transition-colors border border-red-500/20 text-sm font-medium"
+                  className="w-full flex items-center justify-center gap-2 py-1 px-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded transition-colors border border-red-500/20 text-sm font-medium"
                 >
                   <LogOut size={16} />
                   <span>Desconectar</span>
@@ -232,7 +231,6 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Conteúdo da Rota */}
       <div className="flex-1 h-screen overflow-y-auto">
         <Outlet />
       </div>
