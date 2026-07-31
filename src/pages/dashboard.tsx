@@ -166,42 +166,44 @@ export default function Dashboard() {
               HEVOLVE
             </span>
           </Link>
-          <div className="mt-8 text-base flex flex-col gap-1">
-            <NavLink
-              to="treino"
-              className="flex items-center gap-4 px-8 hover:bg-[#22c55e] hover:text-[#f3f3f3] py-3 transition-colors"
-            >
-              <Dumbbell size={22} />
-              <span>Treino</span>
-            </NavLink>
-            <NavLink
-              to="progress"
-              className="flex items-center gap-4 px-8 hover:bg-[#22c55e] hover:text-[#f3f3f3] py-3 transition-colors"
-            >
-              <BarChart3 size={22} />
-              <span>Progresso</span>
-            </NavLink>
-            <NavLink
-              to="create"
-              className="flex items-center gap-4 px-8 hover:bg-[#22c55e] hover:text-[#f3f3f3] py-3 transition-colors"
-            >
-              <FilePlus size={22} />
-              <span>Criar Treino</span>
-            </NavLink>
-            <NavLink
-              to="user"
-              className="flex items-center gap-4 px-8 hover:bg-[#22c55e] hover:text-[#f3f3f3] py-3 transition-colors"
-            >
-              <User size={22} />
-              <span>Perfil</span>
-            </NavLink>
-            <NavLink
-              to="lixeira"
-              className="flex items-center gap-4 px-8 hover:bg-[#22c55e] hover:text-[#f3f3f3] py-3 transition-colors"
-            >
-              <Trash size={22} />
-              <span>Lixeira</span>
-            </NavLink>
+          <div className="mt-8 text-base flex px-4 flex-col">
+            <nav className="flex flex-col gap-2">
+              <NavLink
+                to="treino"
+                className="flex gap-3 p-2.5 hover:bg-[#22c55e] rounded transition-colors"
+              >
+                <Dumbbell size={22} />
+                <span>Treino</span>
+              </NavLink>
+              <NavLink
+                to="progress"
+                className="flex gap-3 p-2.5 hover:bg-[#22c55e] rounded transition-colors"
+              >
+                <BarChart3 size={22} />
+                <span>Progresso</span>
+              </NavLink>
+              <NavLink
+                to="create"
+                className="flex gap-3 p-2.5 hover:bg-[#22c55e] rounded transition-colors"
+              >
+                <FilePlus size={22} />
+                <span>Criar Treino</span>
+              </NavLink>
+              <NavLink
+                to="user"
+                className="flex gap-3 p-2.5 hover:bg-[#22c55e] rounded transition-colors"
+              >
+                <User size={22} />
+                <span>Perfil</span>
+              </NavLink>
+              <NavLink
+                to="lixeira"
+                className="flex gap-3 p-2.5 hover:bg-[#22c55e] rounded transition-colors"
+              >
+                <Trash size={22} />
+                <span>Lixeira</span>
+              </NavLink>
+            </nav>
           </div>
         </div>
 
@@ -219,13 +221,15 @@ export default function Dashboard() {
               <span className="font-bold truncate max-w-[120px]">
                 {user.user_metadata?.full_name || "Usuário"}
               </span>
-               <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center justify-center gap-2 py-1 px-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded transition-colors border border-red-500/20 text-sm font-medium"
-                >
-                  <LogOut size={16} />
-                  <span>Desconectar</span>
-                </button>
+              <button
+                onClick={handleLogout}
+                className="cursor-pointer  flex items-center justify-c gap-2  px-3 
+                 hover:bg-red-500/20 text-red-400 rounded transition-colors 
+                  border-red-500/20 text-sm font-medium"
+              >
+                <LogOut size={16} />
+                <span>Sair</span>
+              </button>
             </div>
           </div>
         )}
