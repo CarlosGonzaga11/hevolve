@@ -11,10 +11,10 @@ import {
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
-
+import type { User as SupabaseUser} from "@supabase/supabase-js";
 export default function Dashboard() {
   const [open, setIsOpen] = useState(false);
-  const [user, setUser] = useState(null);
+ const [user, setUser] = useState<SupabaseUser | null>(null);
   const navigate = useNavigate();
 
   async function handleLogout() {
@@ -218,7 +218,7 @@ export default function Dashboard() {
               className="w-10 h-10 rounded-full border border-white/10 object-cover"
             />
             <div className="flex flex-col items-start leading-none overflow-hidden gap-2">
-              <span className="font-bold truncate max-w-[120px]">
+              <span className="font-bold truncate max-w-30">
                 {user.user_metadata?.full_name || "Usuário"}
               </span>
               <button
