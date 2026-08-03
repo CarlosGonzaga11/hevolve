@@ -28,6 +28,46 @@ export default function TreinoDetalhes() {
 
   const treino = listaTreinosSalvos.find((t) => Number(t.id) === Number(id));
 
+  async function autoFill(itemId: number, quantidadeSeries: number) {
+    try {
+      const { data, error } = await supabase
+        .from("series_executadas")
+        .select("peso,repeticoes")
+        .eq("item_treino_id", itemId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (!data) {
+        toast.info("Nenhum histórico encontrado para este exercício.");
+        return;
+      }
+
+      setValoresAtuais((prev) => {
+        const novoEstado = { ...prev };
+
+        for (let i = 1; i <= quantidadeSeries; i++) {
+          const chave = `${itemId}-${i}`;
+          novoEstado[chave] = {
+            item_treino_id: itemId,
+            numero_serie: i,
+            peso: data.peso,
+            repeticoes: data.repeticoes,
+          };
+        }
+
+        return novoEstado;
+      });
+
+      toast.success("Cargas preenchidas com o treino anterior!");
+    } catch (err) {
+      console.error("Erro no autoFill:", err);
+      toast.error("Erro ao buscar histórico");
+    }
+  }
+
   useEffect(() => {
     async function carregarHistoricoAnterior() {
       if (!treino || !treino.itens_treino) return;
@@ -190,27 +230,39 @@ export default function TreinoDetalhes() {
               key={item.id}
               className="bg-zinc-900 border border-white/10 rounded-2xl p-5"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                 <h3 className="text-xl font-bold text-green-400">
                   {item.exercicios?.nome || "Exercício sem nome"}
                 </h3>
 
-                {ultimoRegistro ? (
-                  <span className="text-xs text-zinc-400 bg-zinc-800/80 border border-white/5 px-2.5 py-1 rounded-md w-fit">
-                    Último treino:{" "}
-                    <strong className="text-white">
-                      {ultimoRegistro.peso} kg
-                    </strong>{" "}
-                    ×{" "}
-                    <strong className="text-white">
-                      {ultimoRegistro.repeticoes} reps
-                    </strong>
-                  </span>
-                ) : (
-                  <span className="text-xs text-zinc-500 bg-zinc-800/40 px-2.5 py-1 rounded-md w-fit">
-                    Sem registro anterior
-                  </span>
-                )}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {ultimoRegistro ? (
+                    <>
+                      <span className="text-xs text-zinc-400 bg-zinc-800/80 border border-white/5 px-2.5 py-1.5 rounded-md">
+                        Último:{" "}
+                        <strong className="text-white">
+                          {ultimoRegistro.peso} kg
+                        </strong>{" "}
+                        ×{" "}
+                        <strong className="text-white">
+                          {ultimoRegistro.repeticoes} reps
+                        </strong>
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => autoFill(item.id, item.series)}
+                        className="text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 text-green-400 hover:text-green-300 border border-green-500/20 px-3 py-1.5 rounded-md transition flex items-center gap-1 cursor-pointer"
+                      >
+                         Repetir carga
+                      </button>
+                    </>
+                  ) : (
+                    <span className="text-xs text-zinc-500 bg-zinc-800/40 px-2.5 py-1 rounded-md">
+                      Sem registro anterior
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -222,6 +274,9 @@ export default function TreinoDetalhes() {
 
                 {Array.from({ length: item.series || 0 }).map((_, i) => {
                   const numeroSerie = i + 1;
+                  const valorSerieAtual =
+                    valoresAtuais[`${item.id}-${numeroSerie}`];
+
                   return (
                     <div
                       key={numeroSerie}
@@ -233,6 +288,7 @@ export default function TreinoDetalhes() {
 
                       <input
                         type="number"
+                        value={valorSerieAtual?.peso ?? ""}
                         placeholder={
                           ultimoRegistro ? `${ultimoRegistro.peso}` : "0"
                         }
@@ -244,11 +300,12 @@ export default function TreinoDetalhes() {
                             e.target.value,
                           )
                         }
-                        className="bg-zinc-800 rounded-md py-2 px-3 text-sm outline-none focus:border-green-500 border border-transparent"
+                        className="bg-zinc-800 rounded-md py-2 px-3 text-sm outline-none focus:border-green-500 border border-transparent text-white"
                       />
 
                       <input
                         type="number"
+                        value={valorSerieAtual?.repeticoes ?? ""}
                         placeholder={
                           item.repeticoes ? `${item.repeticoes}` : "0"
                         }
@@ -260,7 +317,7 @@ export default function TreinoDetalhes() {
                             e.target.value,
                           )
                         }
-                        className="bg-zinc-800 rounded-md py-2 px-3 text-sm outline-none focus:border-green-500 border border-transparent"
+                        className="bg-zinc-800 rounded-md py-2 px-3 text-sm outline-none focus:border-green-500 border border-transparent text-white"
                       />
                     </div>
                   );
