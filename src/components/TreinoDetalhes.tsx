@@ -6,6 +6,11 @@ import { toast, Toaster } from "sonner";
 import { processarConquistas } from "../logic/Archievements";
 import { supabase } from "../supabase";
 
+interface HistoricoItem {
+  peso: number;
+  repeticoes: number;
+}
+
 export default function TreinoDetalhes() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -16,8 +21,40 @@ export default function TreinoDetalhes() {
     setLoading,
   } = useTrain();
 
-  const [valoresAtuais, setValoresAtuais] = useState({});
+  const [valoresAtuais, setValoresAtuais] = useState<Record<string, any>>({});
+  const [historicoAnterior, setHistoricoAnterior] = useState<Record<number, HistoricoItem>>({});
+
   const treino = listaTreinosSalvos.find((t) => Number(t.id) === Number(id));
+
+  useEffect(() => {
+    async function carregarHistoricoAnterior() {
+      if (!treino || !treino.itens_treino) return;
+
+      const historicoTemp: Record<number, HistoricoItem> = {};
+
+      for (const item of treino.itens_treino) {
+        const { data } = await supabase
+          .from("series_executadas")
+          .select("peso, repeticoes")
+          .eq("item_treino_id", item.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (data) {
+          historicoTemp[item.id] = {
+            peso: data.peso || 0,
+            repeticoes: data.repeticoes || 0,
+          };
+        }
+      }
+
+      setHistoricoAnterior(historicoTemp);
+    }
+
+    carregarHistoricoAnterior();
+  }, [treino]);
+
   useEffect(() => {
     const temDadosDigitados = Object.keys(valoresAtuais).length > 0;
 
@@ -40,7 +77,7 @@ export default function TreinoDetalhes() {
   if (!treino)
     return <div className="text-white p-6">Treino não encontrado</div>;
 
-  const handleInputChange = (itemId, serieNum, campo, valor) => {
+  const handleInputChange = (itemId: number, serieNum: number, campo: string, valor: string) => {
     const valorNumerico = Math.max(0, Number(valor) || 0);
     setValoresAtuais((prev) => ({
       ...prev,
@@ -55,8 +92,9 @@ export default function TreinoDetalhes() {
 
   const handleFinalizar = async () => {
     const dadosParaHistorico = Object.values(valoresAtuais);
-    const mapaNomes = {};
-    treino.itens_treino.forEach((item) => {
+    const mapaNomes: Record<number, string> = {};
+    
+    treino.itens_treino.forEach((item: any) => {
       mapaNomes[item.id] = item.exercicios?.nome;
     });
 
@@ -64,12 +102,17 @@ export default function TreinoDetalhes() {
       toast.error("Preencha pelo menos uma série!");
       return;
     }
+
     try {
       setLoading(true);
 
       await finalizarTreinoComHistorico(treino.id, dadosParaHistorico);
-      const { data: { user } } = await supabase.auth.getUser();
-    const { count } = await supabase
+      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      const { count } = await supabase
         .from("treinos_realizados")
         .select("*", { count: "exact", head: true })
         .eq("user_id", user?.id);
@@ -79,6 +122,7 @@ export default function TreinoDetalhes() {
         dadosParaHistorico,
         mapaNomes,
       );
+
       if (novas.length > 0) {
         novas.forEach((msg) => {
           if (msg.includes("menos")) {
@@ -94,6 +138,7 @@ export default function TreinoDetalhes() {
           }
         });
       }
+
       toast.success("Treino Finalizado", { position: "bottom-center" });
       setValoresAtuais({});
       navigate("/dashboard/treino");
@@ -107,6 +152,7 @@ export default function TreinoDetalhes() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white p-6">
+      <Toaster richColors />
       <div className="mb-8">
         <Link
           to="/dashboard/treino"
@@ -118,69 +164,85 @@ export default function TreinoDetalhes() {
       </div>
 
       <div className="grid gap-6 mb-20">
-        {treino.itens_treino.map((item:any) => (
-          <div
-            key={item.id}
-            className="bg-zinc-900 border border-white/10 rounded-2xl p-5"
-          >
-            <h3 className="text-xl font-bold text-green-400 mb-4">
-              {item.exercicios?.nome || "Exercício sem nome"}
-            </h3>
+        {treino.itens_treino.map((item: any) => {
+          const ultimoRegistro = historicoAnterior[item.id];
 
-            <div className="space-y-2">
-              <div className="grid grid-cols-[2rem_1fr_1fr] gap-2 px-2 text-[11px] font-bold text-zinc-500 uppercase">
-                <span>Set</span>
-                <span>Peso (kg)</span>
-                <span>Reps</span>
+          return (
+            <div
+              key={item.id}
+              className="bg-zinc-900 border border-white/10 rounded-2xl p-5"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                <h3 className="text-xl font-bold text-green-400">
+                  {item.exercicios?.nome || "Exercício sem nome"}
+                </h3>
+
+                {ultimoRegistro ? (
+                  <span className="text-xs text-zinc-400 bg-zinc-800/80 border border-white/5 px-2.5 py-1 rounded-md w-fit">
+                    Último treino: <strong className="text-white">{ultimoRegistro.peso} kg</strong> × <strong className="text-white">{ultimoRegistro.repeticoes} reps</strong>
+                  </span>
+                ) : (
+                  <span className="text-xs text-zinc-500 bg-zinc-800/40 px-2.5 py-1 rounded-md w-fit">
+                    Sem registro anterior
+                  </span>
+                )}
               </div>
 
-              {Array.from({ length: item.series || 0 }).map((_, i) => {
-                const numeroSerie = i + 1;
-                return (
-                  <div
-                    key={numeroSerie}
-                    className="grid grid-cols-[2rem_1fr_1fr] gap-2 bg-zinc-950/50 p-3 rounded-lg items-center"
-                  >
-                    <span className="text-zinc-500 text-sm">
-                      {numeroSerie}º
-                    </span>
+              <div className="space-y-2">
+                <div className="grid grid-cols-[2rem_1fr_1fr] gap-2 px-2 text-[11px] font-bold text-zinc-500 uppercase">
+                  <span>Set</span>
+                  <span>Peso (kg)</span>
+                  <span>Reps</span>
+                </div>
 
-                    <input
-                      type="number"
-                      placeholder="0"
-                      onChange={(e) =>
-                        handleInputChange(
-                          item.id,
-                          numeroSerie,
-                          "peso",
-                          e.target.value,
-                        )
-                      }
-                      className="bg-zinc-800 rounded-md py-2 px-3 text-sm outline-none focus:border-green-500 border border-transparent"
-                    />
+                {Array.from({ length: item.series || 0 }).map((_, i) => {
+                  const numeroSerie = i + 1;
+                  return (
+                    <div
+                      key={numeroSerie}
+                      className="grid grid-cols-[2rem_1fr_1fr] gap-2 bg-zinc-950/50 p-3 rounded-lg items-center"
+                    >
+                      <span className="text-zinc-500 text-sm">
+                        {numeroSerie}º
+                      </span>
 
-                    <input
-                      type="number"
-                      placeholder={item.repeticoes || "0"}
-                      onChange={(e) =>
-                        handleInputChange(
-                          item.id,
-                          numeroSerie,
-                          "repeticoes",
-                          e.target.value,
-                        )
-                      }
-                      className="bg-zinc-800 rounded-md py-2 px-3 text-sm outline-none focus:border-green-500 border border-transparent"
-                    />
-                  </div>
-                );
-              })}
+                      <input
+                        type="number"
+                        placeholder={ultimoRegistro ? `${ultimoRegistro.peso}` : "0"}
+                        onChange={(e) =>
+                          handleInputChange(
+                            item.id,
+                            numeroSerie,
+                            "peso",
+                            e.target.value,
+                          )
+                        }
+                        className="bg-zinc-800 rounded-md py-2 px-3 text-sm outline-none focus:border-green-500 border border-transparent"
+                      />
+
+                      <input
+                        type="number"
+                        placeholder={item.repeticoes ? `${item.repeticoes}` : "0"}
+                        onChange={(e) =>
+                          handleInputChange(
+                            item.id,
+                            numeroSerie,
+                            "repeticoes",
+                            e.target.value,
+                          )
+                        }
+                        className="bg-zinc-800 rounded-md py-2 px-3 text-sm outline-none focus:border-green-500 border border-transparent"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      <div className="bottom-6  w-full px-6">
+      <div className="bottom-6 w-full px-6">
         <button
           onClick={handleFinalizar}
           disabled={loading}
