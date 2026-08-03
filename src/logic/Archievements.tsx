@@ -62,17 +62,39 @@ export async function processarConquistas(
       .from("series_executadas")
       .select("peso, created_at")
       .eq("item_treino_id", id)
-      .order("peso", { ascending: false });
+      .order("created_at", { ascending: false });
 
     const agora = Date.now();
-    const recordeHistoricoAnterior = recordes?.find((r) => {
+    const registoAnterior = recordes?.find((r) => {
       const dataCriacao = new Date(r.created_at).getTime();
       return agora - dataCriacao > 30000;
     });
 
-    const recordeAnterior = recordeHistoricoAnterior?.peso || 0;
+    const pesoAnterior = registoAnterior?.peso || 0;
 
-    if (maiorPesoHoje > recordeAnterior) {
+    if (pesoAnterior > 0) {
+      if (maiorPesoHoje > pesoAnterior) {
+        const chavePR = `pr_item_${id}_${maiorPesoHoje}`;
+        const eNovoPR = await salvarConquistaSeNaoExistir(chavePR, user.id, {
+          tipo: "PR",
+          item_id: id,
+          nome: nomeExercicio,
+          peso: maiorPesoHoje,
+        });
+
+        if (eNovoPR) {
+          await salvarConquistaSeNaoExistir("superou_limite", user.id);
+          novasConquistas.push(
+            `🔥 Novo recorde no ${nomeExercicio}: ${maiorPesoHoje}kg! (Anterior: ${pesoAnterior}kg)`
+          );
+        }
+      } else if (maiorPesoHoje < pesoAnterior) {
+        const diferenca = pesoAnterior - maiorPesoHoje;
+        novasConquistas.push(
+          `⚠️ Carga menor no ${nomeExercicio}: ${maiorPesoHoje}kg (${diferenca}kg a menos que a última vez)`
+        );
+      }
+    } else if (maiorPesoHoje > 0) {
       const chavePR = `pr_item_${id}_${maiorPesoHoje}`;
       const eNovoPR = await salvarConquistaSeNaoExistir(chavePR, user.id, {
         tipo: "PR",
@@ -82,17 +104,9 @@ export async function processarConquistas(
       });
 
       if (eNovoPR) {
-        await salvarConquistaSeNaoExistir("superou_limite", user.id);
-
-        if (recordeAnterior > 0) {
-          novasConquistas.push(
-            `🔥 Novo recorde no ${nomeExercicio}: ${maiorPesoHoje}kg! (Anterior: ${recordeAnterior}kg)`
-          );
-        } else {
-          novasConquistas.push(
-            `⚡ Primeiro registro de peso no ${nomeExercicio}: ${maiorPesoHoje}kg!`
-          );
-        }
+        novasConquistas.push(
+          `⚡ Primeiro registro de peso no ${nomeExercicio}: ${maiorPesoHoje}kg!`
+        );
       }
     }
   }
