@@ -44,7 +44,6 @@ export default function Progress() {
     "Abdominais",
   ];
 
-  // 1. Calcula Volume Total
   useEffect(() => {
     async function calcularVolume() {
       if (!user) return;
@@ -77,7 +76,6 @@ export default function Progress() {
     calcularVolume();
   }, [user]);
 
-  // 2. Busca Exercícios e Quantidade de Treinos em Paralelo
   useEffect(() => {
     if (!user) return;
 
@@ -114,7 +112,6 @@ export default function Progress() {
         if (resExercicios.error) throw resExercicios.error;
         if (resQuantidade.error) throw resQuantidade.error;
 
-        // Processa exercícios únicos
         if (resExercicios.data) {
           const unicos: Exercicio[] = [];
           const idsVistos = new Set<number>();
@@ -130,7 +127,6 @@ export default function Progress() {
           setMeusExercicios(unicos);
         }
 
-        // Define quantidade total via count da query
         if (resQuantidade.count !== null) {
           setQuantidadeTreinoRealizado(resQuantidade.count);
         }
@@ -144,7 +140,6 @@ export default function Progress() {
     carregarDadosIniciais();
   }, [user]);
 
-  // 3. Carrega os dados do Gráfico para o exercício selecionado
   useEffect(() => {
     async function carregarDadosGrafico() {
       if (!idSelecionado || !user) {
@@ -172,7 +167,6 @@ export default function Progress() {
 
         if (error) throw error;
 
-        // Agrupa por data pegando a maior carga do dia
         const agrupados = (data || []).reduce(
           (acc: Record<string, number>, item: any) => {
             const dataFormatada = new Date(item.created_at).toLocaleDateString(
@@ -222,14 +216,13 @@ export default function Progress() {
       </div>
 
       <div className="px-6 mt-8">
-        {/* Filtros de Categoria */}
         <div className="flex flex-wrap gap-2 mb-6">
           {categorias.map((cat) => (
             <button
               key={cat}
               onClick={() => {
                 setCategoriaFiltro(cat);
-                setIdSelecionado(""); // Limpa seleção ao trocar de grupo
+                setIdSelecionado("");
               }}
               className={`px-3 py-1 rounded-full text-xs font-bold transition ${
                 categoriaFiltro === cat
@@ -242,7 +235,6 @@ export default function Progress() {
           ))}
         </div>
 
-        {/* Select de Exercícios */}
         <div className="max-w-md">
           <select
             className="w-full bg-[#0f0f0f] border border-[#B3B3B3]/20 text-white focus:border-[#22c55e] focus:outline-none py-2 px-3 rounded-lg"
@@ -263,7 +255,6 @@ export default function Progress() {
           </select>
         </div>
 
-        {/* Área do Gráfico */}
         <div className="mt-8 bg-[#0f0f0f] border border-white/5 rounded-2xl p-6 min-h-[300px] flex flex-col justify-center">
           {!idSelecionado ? (
             <p className="text-center text-zinc-500 italic">
@@ -287,8 +278,7 @@ export default function Progress() {
         <h3 className="mt-10 mb-4 text-3xl font-semibold uppercase">
           Métricas
         </h3>
-   
-        {/* Métricas */}
+
         <div className="grid grid-cols-2 gap-2">
           <Metric
             icon={<Flame />}
@@ -302,7 +292,6 @@ export default function Progress() {
           />
         </div>
 
-        {/* Comparação Semanal */}
         <div className="mt-6 mb-12 relative">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm w-full h-full text-[#22c55e] font-bold text-4xl text-center items-center flex justify-center rounded z-10 animate-pulse">
             EM BREVE...
@@ -316,7 +305,7 @@ export default function Progress() {
           </div>
         </div>
         <div>
-              <AchievementList/>
+          <AchievementList />
           <HistoryTrain />
         </div>
       </div>

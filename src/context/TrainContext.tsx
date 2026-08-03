@@ -73,11 +73,9 @@ export function TrainProvider({ children }) {
       )
       .eq("user_id", user.id)
       .eq("deletado", false);
-    console.log("data vindo da buscar treinos", data);
 
     if (error) console.error("Erro ao buscar:", error);
     else setListaTreinosSalvos(data);
-    console.log("tem algo aq", treinosDeletados);
   }
   async function buscarDadosParaExecucao(fichaId) {
     const { data, error } = await supabase
@@ -244,7 +242,6 @@ export function TrainProvider({ children }) {
         toast.success("✅ Ciclo de treinos resetado com sucesso!");
       }
       await buscarTreinos();
-      console.log("Histórico salvo com sucesso!");
     } catch (error) {
       console.error("Erro na lógica de histórico:", error.message);
     }
