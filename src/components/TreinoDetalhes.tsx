@@ -22,7 +22,9 @@ export default function TreinoDetalhes() {
   } = useTrain();
 
   const [valoresAtuais, setValoresAtuais] = useState<Record<string, any>>({});
-  const [historicoAnterior, setHistoricoAnterior] = useState<Record<number, HistoricoItem>>({});
+  const [historicoAnterior, setHistoricoAnterior] = useState<
+    Record<number, HistoricoItem>
+  >({});
 
   const treino = listaTreinosSalvos.find((t) => Number(t.id) === Number(id));
 
@@ -77,7 +79,12 @@ export default function TreinoDetalhes() {
   if (!treino)
     return <div className="text-white p-6">Treino não encontrado</div>;
 
-  const handleInputChange = (itemId: number, serieNum: number, campo: string, valor: string) => {
+  const handleInputChange = (
+    itemId: number,
+    serieNum: number,
+    campo: string,
+    valor: string,
+  ) => {
     const valorNumerico = Math.max(0, Number(valor) || 0);
     setValoresAtuais((prev) => ({
       ...prev,
@@ -91,15 +98,26 @@ export default function TreinoDetalhes() {
   };
 
   const handleFinalizar = async () => {
-    const dadosParaHistorico = Object.values(valoresAtuais);
+    const mapaMetaRepeticoes: Record<number, number> = {};
     const mapaNomes: Record<number, string> = {};
-    
+
     treino.itens_treino.forEach((item: any) => {
       mapaNomes[item.id] = item.exercicios?.nome;
+      mapaMetaRepeticoes[item.id] = Number(item.repeticoes) || 10;
     });
 
+    const dadosParaHistorico = Object.values(valoresAtuais)
+      .filter((serie: any) => serie.peso > 0)
+      .map((serie: any) => {
+        const metaReps = mapaMetaRepeticoes[serie.item_treino_id] || 10;
+        return {
+          ...serie,
+          repeticoes: serie.repeticoes > 0 ? serie.repeticoes : metaReps,
+        };
+      });
+
     if (dadosParaHistorico.length === 0) {
-      toast.error("Preencha pelo menos uma série!");
+      toast.error("Preencha pelo menos a carga (peso) de uma série!");
       return;
     }
 
@@ -107,7 +125,7 @@ export default function TreinoDetalhes() {
       setLoading(true);
 
       await finalizarTreinoComHistorico(treino.id, dadosParaHistorico);
-      
+
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -179,7 +197,14 @@ export default function TreinoDetalhes() {
 
                 {ultimoRegistro ? (
                   <span className="text-xs text-zinc-400 bg-zinc-800/80 border border-white/5 px-2.5 py-1 rounded-md w-fit">
-                    Último treino: <strong className="text-white">{ultimoRegistro.peso} kg</strong> × <strong className="text-white">{ultimoRegistro.repeticoes} reps</strong>
+                    Último treino:{" "}
+                    <strong className="text-white">
+                      {ultimoRegistro.peso} kg
+                    </strong>{" "}
+                    ×{" "}
+                    <strong className="text-white">
+                      {ultimoRegistro.repeticoes} reps
+                    </strong>
                   </span>
                 ) : (
                   <span className="text-xs text-zinc-500 bg-zinc-800/40 px-2.5 py-1 rounded-md w-fit">
@@ -208,7 +233,9 @@ export default function TreinoDetalhes() {
 
                       <input
                         type="number"
-                        placeholder={ultimoRegistro ? `${ultimoRegistro.peso}` : "0"}
+                        placeholder={
+                          ultimoRegistro ? `${ultimoRegistro.peso}` : "0"
+                        }
                         onChange={(e) =>
                           handleInputChange(
                             item.id,
@@ -222,7 +249,9 @@ export default function TreinoDetalhes() {
 
                       <input
                         type="number"
-                        placeholder={item.repeticoes ? `${item.repeticoes}` : "0"}
+                        placeholder={
+                          item.repeticoes ? `${item.repeticoes}` : "0"
+                        }
                         onChange={(e) =>
                           handleInputChange(
                             item.id,
