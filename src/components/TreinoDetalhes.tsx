@@ -236,7 +236,7 @@ export default function TreinoDetalhes() {
                 </h3>
 
                 <div className="flex items-center gap-2 flex-wrap">
-                  {ultimoRegistro ? (
+                  {ultimoRegistro && ultimoRegistro.peso > 0 ? (
                     <>
                       <span className="text-xs text-zinc-400 bg-zinc-800/80 border border-white/5 px-2.5 py-1.5 rounded-md">
                         Último:{" "}
