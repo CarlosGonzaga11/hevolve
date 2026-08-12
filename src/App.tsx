@@ -19,10 +19,20 @@ export default function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/registro" element={<Register />} />
 
+        {/* ✅ Sintaxe corrigida com a barra antes do asterisco (/*) */}
+        <Route
+          path="access_token=/*"
+          element={<Navigate to="/dashboard/treino" replace />}
+        />
+        <Route
+          path="/access_token=/*"
+          element={<Navigate to="/dashboard/treino" replace />}
+        />
+
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />}>
             <Route index element={<Navigate to="treino" replace />} />
-            <Route path="treino" index element={<TrainingPage />} />
+            <Route path="treino" element={<TrainingPage />} />
             <Route path="treino/:id" element={<TreinoDetalhes />} />
             <Route path="progress" element={<Progress />} />
             <Route path="create" element={<CreateTrain />} />
@@ -30,6 +40,8 @@ export default function App() {
             <Route path="lixeira" element={<TrashPage />} />
           </Route>
         </Route>
+
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
   );

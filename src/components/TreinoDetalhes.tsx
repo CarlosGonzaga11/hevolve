@@ -5,6 +5,7 @@ import Loader from "./loader";
 import { toast, Toaster } from "sonner";
 import { processarConquistas } from "../logic/Archievements";
 import { supabase } from "../supabase";
+import { useAuth } from "../context/AuthContext";
 
 interface HistoricoItem {
   peso: number;
@@ -14,6 +15,7 @@ interface HistoricoItem {
 export default function TreinoDetalhes() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth(); // Garantir que temos o usuário logado
   const {
     listaTreinosSalvos,
     finalizarTreinoComHistorico,
@@ -28,12 +30,16 @@ export default function TreinoDetalhes() {
 
   const treino = listaTreinosSalvos.find((t) => Number(t.id) === Number(id));
 
+  // AutoFill corrigido com validação de User ID
   async function autoFill(itemId: number, quantidadeSeries: number) {
+    if (!user) return;
+
     try {
       const { data, error } = await supabase
         .from("series_executadas")
-        .select("peso,repeticoes")
+        .select("peso, repeticoes, treinos_realizados!inner(user_id)")
         .eq("item_treino_id", itemId)
+        .eq("treinos_realizados.user_id", user.id) // Proteção IDOR
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -68,34 +74,48 @@ export default function TreinoDetalhes() {
     }
   }
 
+  // Otimização N+1: Carrega todo o histórico do treino em UMA ÚNICA chamada
   useEffect(() => {
     async function carregarHistoricoAnterior() {
-      if (!treino || !treino.itens_treino) return;
+      if (!treino || !treino.itens_treino || !user) return;
 
-      const historicoTemp: Record<number, HistoricoItem> = {};
+      const itemIds = treino.itens_treino.map((i: any) => i.id);
+      if (itemIds.length === 0) return;
 
-      for (const item of treino.itens_treino) {
-        const { data } = await supabase
+      try {
+        const { data, error } = await supabase
           .from("series_executadas")
-          .select("peso, repeticoes")
-          .eq("item_treino_id", item.id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .select(
+            "item_treino_id, peso, repeticoes, created_at, treinos_realizados!inner(user_id)",
+          )
+          .in("item_treino_id", itemIds)
+          .eq("treinos_realizados.user_id", user.id) // Proteção IDOR
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
 
         if (data) {
-          historicoTemp[item.id] = {
-            peso: data.peso || 0,
-            repeticoes: data.repeticoes || 0,
-          };
-        }
-      }
+          const historicoTemp: Record<number, HistoricoItem> = {};
 
-      setHistoricoAnterior(historicoTemp);
+          // Como vem ordenado por created_at DESC, o primeiro ID encontrado é o mais recente
+          data.forEach((row: any) => {
+            if (!historicoTemp[row.item_treino_id]) {
+              historicoTemp[row.item_treino_id] = {
+                peso: row.peso || 0,
+                repeticoes: row.repeticoes || 0,
+              };
+            }
+          });
+
+          setHistoricoAnterior(historicoTemp);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar histórico:", err);
+      }
     }
 
     carregarHistoricoAnterior();
-  }, [treino]);
+  }, [treino, user]);
 
   useEffect(() => {
     const temDadosDigitados = Object.keys(valoresAtuais).length > 0;
@@ -125,7 +145,12 @@ export default function TreinoDetalhes() {
     campo: string,
     valor: string,
   ) => {
-    const valorNumerico = Math.max(0, Number(valor) || 0);
+    // Limita valores astronômicos/inválidos de entrada
+    const parsed = Number(valor);
+    const valorNumerico = isNaN(parsed)
+      ? 0
+      : Math.min(Math.max(0, parsed), 999);
+
     setValoresAtuais((prev) => ({
       ...prev,
       [`${itemId}-${serieNum}`]: {
@@ -138,6 +163,11 @@ export default function TreinoDetalhes() {
   };
 
   const handleFinalizar = async () => {
+    if (!user) {
+      toast.error("Usuário não autenticado.");
+      return;
+    }
+
     const mapaMetaRepeticoes: Record<number, number> = {};
     const mapaNomes: Record<number, string> = {};
 
@@ -166,14 +196,10 @@ export default function TreinoDetalhes() {
 
       await finalizarTreinoComHistorico(treino.id, dadosParaHistorico);
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
       const { count } = await supabase
         .from("treinos_realizados")
         .select("*", { count: "exact", head: true })
-        .eq("user_id", user?.id);
+        .eq("user_id", user.id);
 
       const novas = await processarConquistas(
         count || 0,
@@ -214,7 +240,7 @@ export default function TreinoDetalhes() {
       <div className="mb-8">
         <Link
           to="/dashboard/treino"
-          className="text-sm text-zinc-400 hover:text-white"
+          className="text-sm text-zinc-400 hover:text-white transition"
         >
           ← Voltar
         </Link>
@@ -254,7 +280,7 @@ export default function TreinoDetalhes() {
                         onClick={() => autoFill(item.id, item.series)}
                         className="text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 text-green-400 hover:text-green-300 border border-green-500/20 px-3 py-1.5 rounded-md transition flex items-center gap-1 cursor-pointer"
                       >
-                         Repetir carga
+                        Repetir carga
                       </button>
                     </>
                   ) : (
@@ -288,6 +314,8 @@ export default function TreinoDetalhes() {
 
                       <input
                         type="number"
+                        min="0"
+                        max="999"
                         value={valorSerieAtual?.peso ?? ""}
                         placeholder={
                           ultimoRegistro ? `${ultimoRegistro.peso}` : "0"
@@ -305,6 +333,8 @@ export default function TreinoDetalhes() {
 
                       <input
                         type="number"
+                        min="0"
+                        max="999"
                         value={valorSerieAtual?.repeticoes ?? ""}
                         placeholder={
                           item.repeticoes ? `${item.repeticoes}` : "0"
@@ -333,7 +363,7 @@ export default function TreinoDetalhes() {
           onClick={handleFinalizar}
           disabled={loading}
           className="cursor-pointer bg-green-500 text-black font-extrabold 
-          py-4 rounded-xl hover:bg-green-400 transition w-full shadow-lg shadow-green-500/20"
+          py-4 rounded-xl hover:bg-green-400 transition w-full shadow-lg shadow-green-500/20 disabled:opacity-50"
         >
           {loading ? <Loader size="sm" /> : "FINALIZAR E SALVAR CARGAS"}
         </button>

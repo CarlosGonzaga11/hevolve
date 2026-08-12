@@ -3,10 +3,11 @@ import { useTrain } from "../context/TrainContext";
 import CardFichaExercicios from "../components/cardFichaExercicios";
 import Loader from "../components/loader";
 import { toast } from "sonner";
+import { Plus, Trash2 } from "lucide-react";
 
 export default function App() {
   const [exerciciosTreino, setExerciciosTreino] = useState([]);
-  const [nomeExercicioInput, setNomeExercicioInput] = useState(""); // Aceita texto digitado ou selecionado
+  const [nomeExercicioInput, setNomeExercicioInput] = useState("");
   const [nomeTreino, setNomeTreino] = useState("");
   const [categoriaSelecionada, setCategoriaSelecionada] = useState("Todos");
   const [loaderButton, setLoaderButton] = useState(false);
@@ -28,7 +29,7 @@ export default function App() {
     setRepeticoes,
     series,
     repeticoes,
-    listaExerciciosDB,
+    listaExerciciosDB = [],
   } = useTrain();
 
   const exerciciosFiltrados = listaExerciciosDB.filter((ex) => {
@@ -38,100 +39,145 @@ export default function App() {
 
   function handleAddExercicio() {
     const nomeFormatado = nomeExercicioInput.trim();
-    if (!nomeFormatado)
+    if (!nomeFormatado) {
       return toast.error("Escreva ou selecione um exercício primeiro");
+    }
+
+    const numSeries = Number(series);
+    const numReps = Number(repeticoes);
+
+    if (!numSeries || numSeries <= 0 || !numReps || numReps <= 0) {
+      return toast.error("Informe valores válidos para séries e repetições");
+    }
+
+    // Verifica se o exercício já existe na lista temporária
+    const jaAdicionado = exerciciosTreino.some(
+      (ex) => ex.nome.toLowerCase() === nomeFormatado.toLowerCase(),
+    );
+
+    if (jaAdicionado) {
+      return toast.warning("Este exercício já foi adicionado a esta ficha");
+    }
 
     const exercicioExistente = listaExerciciosDB.find(
       (ex) => ex.nome.toLowerCase() === nomeFormatado.toLowerCase(),
     );
+
     const grupoMuscular =
-      categoriaSelecionada === "Todos" ? "Geral" : categoriaSelecionada;
+      categoriaSelecionada === "Todos"
+        ? exercicioExistente?.grupo_muscular || "Geral"
+        : categoriaSelecionada;
+
     const novoItem = {
       id: exercicioExistente ? exercicioExistente.id : null,
       nome: nomeFormatado,
       grupo_muscular: grupoMuscular,
-      series: Number(series),
-      repeticoes: Number(repeticoes),
+      series: numSeries,
+      repeticoes: numReps,
     };
 
     setExerciciosTreino([...exerciciosTreino, novoItem]);
     setNomeExercicioInput("");
-    toast.success("Exercício adicionado");
+    toast.success("Exercício adicionado à ficha");
+  }
+
+  function handleRemoveExercicio(indexParaRemover) {
+    setExerciciosTreino((prev) =>
+      prev.filter((_, index) => index !== indexParaRemover),
+    );
+    toast.info("Exercício removido");
   }
 
   async function handleSaveFicha() {
-    if (!nomeTreino || exerciciosTreino.length === 0)
-      return toast.warning(
-        "Dê um nome ao treino e adicione pelo menos um exercício",
-      );
+    if (!nomeTreino.trim()) {
+      return toast.warning("Dê um nome ao treino antes de salvar");
+    }
+
+    if (exerciciosTreino.length === 0) {
+      return toast.warning("Adicione pelo menos um exercício à ficha");
+    }
 
     try {
       setLoaderButton(true);
       await salvarTreino(nomeTreino, exerciciosTreino);
       toast.success("Treino salvo com sucesso!", { position: "bottom-center" });
 
+      // Reset completo do formulário
       setExerciciosTreino([]);
       setNomeTreino("");
+      setNomeExercicioInput("");
+      setSeries("");
+      setRepeticoes("");
     } catch (error) {
       console.error("Erro ao salvar:", error);
-      toast.error("Erro ao salvar ficha");
+      toast.error("Erro ao salvar ficha de treino");
     } finally {
       setLoaderButton(false);
     }
   }
 
   return (
-    <div className="text-white pb-10 ">
-      <div className="mt-16 px-6 sm:mt-12">
-        <h1 className=" text-3xl uppercase font-bold tracking-tighter text-[#22c55e]">
+    <div className="text-white pb-10 max-w-7xl mx-auto px-4 sm:px-6">
+      <div className="mt-12 sm:mt-10 mb-6">
+        <h1 className="text-3xl uppercase font-extrabold tracking-tight text-[#22c55e]">
           Hevolve
         </h1>
-        <p className="text-zinc-500">
-          Seu site para análise de desenvolvimento de carga
+        <p className="text-zinc-400 text-sm mt-1">
+          Crie e gerencie suas fichas de treino para acompanhamento de cargas
         </p>
       </div>
 
-      <div className="flex flex-col md:flex md:flex-row w-full">
-        <div className="w-full">
-          <div className="flex flex-col px-6 mt-6 space-y-4 mx-6 bg-[#0f0f0f] border border-white/10 rounded-xl p-6">
-            <span className="text-2xl font-bold text-[#22c55e]">
-              Crie sua ficha
-            </span>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="lg:col-span-7 bg-[#0f0f0f] border border-white/10 rounded-xl p-6 space-y-5">
+          <span className="text-xl font-bold text-[#22c55e] block">
+            Nova Ficha de Treino
+          </span>
 
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold uppercase text-zinc-400">
+              Nome do Treino
+            </label>
             <input
               value={nomeTreino}
               onChange={(e) => setNomeTreino(e.target.value)}
-              placeholder="Nome do treino (Ex: Treino A - Peito)"
-              className="bg-zinc-900 text-white border border-white/10 focus:border-[#22c55e] focus:outline-none px-3 py-2 rounded"
+              placeholder="Ex: Treino A - Peito e Tríceps"
+              className="bg-zinc-900 text-white border border-white/10 focus:border-[#22c55e] focus:outline-none px-3 py-2.5 rounded-lg text-sm transition"
             />
+          </div>
 
-            {/* Categorias de Filtro */}
-            <div className="flex flex-wrap gap-2 mb-4">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold uppercase text-zinc-400">
+              Filtrar Exercícios por Categoria
+            </label>
+            <div className="flex flex-wrap gap-1.5">
               {categorias.map((cat) => (
                 <button
                   key={cat}
-                  onClick={() => {
-                    setCategoriaSelecionada(cat);
-                  }}
-                  className={`px-3 py-1 rounded-full text-xs font-bold transition ${
+                  type="button"
+                  onClick={() => setCategoriaSelecionada(cat)}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold transition cursor-pointer ${
                     categoriaSelecionada === cat
                       ? "bg-[#22c55e] text-black"
-                      : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                      : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white"
                   }`}
                 >
                   {cat}
                 </button>
               ))}
             </div>
+          </div>
 
-            {/* Input com Datalist (Texto Livre + Autocomplete) */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold uppercase text-zinc-400">
+              Exercício
+            </label>
             <div className="flex gap-2 w-full">
               <input
                 list="opcoes-exercicios"
                 value={nomeExercicioInput}
                 onChange={(e) => setNomeExercicioInput(e.target.value)}
-                placeholder="Digite ou selecione um exercício..."
-                className="bg-zinc-900 w-full text-gray-300 border border-white/10 focus:border-[#22c55e] focus:outline-none px-3 py-2 rounded"
+                placeholder="Digite ou selecione da lista..."
+                className="bg-zinc-900 flex-1 text-white border border-white/10 focus:border-[#22c55e] focus:outline-none px-3 py-2.5 rounded-lg text-sm transition"
               />
 
               <datalist id="opcoes-exercicios">
@@ -143,70 +189,96 @@ export default function App() {
               </datalist>
 
               <button
-                className="font-bold bg-[#22c55e] text-black px-4 py-2 rounded hover:bg-green-400 transition cursor-pointer"
+                type="button"
+                className="font-bold bg-[#22c55e] text-black px-4 py-2.5 rounded-lg hover:bg-green-400 transition cursor-pointer flex items-center justify-center shrink-0"
                 onClick={handleAddExercicio}
+                title="Adicionar exercício"
               >
-                +
+                <Plus size={20} />
               </button>
             </div>
+          </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col">
-                <label className="text-[#22c55e] font-bold text-xs uppercase">
-                  Séries
-                </label>
-                <input
-                  type="number"
-                  className="mt-1 bg-zinc-900 border border-white/10 focus:border-[#22c55e] focus:outline-none px-3 py-2 rounded"
-                  value={series}
-                  onChange={(e) => setSeries(e.target.value)}
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="text-[#22c55e] font-bold text-xs uppercase">
-                  Repetições
-                </label>
-                <input
-                  type="number"
-                  className="mt-1 bg-zinc-900 border border-white/10 focus:border-[#22c55e] focus:outline-none px-3 py-2 rounded"
-                  value={repeticoes}
-                  onChange={(e) => setRepeticoes(e.target.value)}
-                />
-              </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold uppercase text-[#22c55e]">
+                Séries
+              </label>
+              <input
+                type="number"
+                min="1"
+                placeholder="Ex: 4"
+                className="bg-zinc-900 text-white border border-white/10 focus:border-[#22c55e] focus:outline-none px-3 py-2 rounded-lg text-sm"
+                value={series}
+                onChange={(e) => setSeries(e.target.value)}
+              />
             </div>
 
-            <button
-              disabled={loaderButton}
-              className="w-full font-bold py-3 bg-[#22c55e] text-black rounded-lg mt-4 hover:bg-green-400 transition cursor-pointer"
-              onClick={handleSaveFicha}
-            >
-              {loaderButton ? (
-                <Loader size="sm" />
-              ) : (
-                <p className="hover:text-black/80">Salvar Treino</p>
-              )}
-            </button>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold uppercase text-[#22c55e]">
+                Repetições
+              </label>
+              <input
+                type="number"
+                min="1"
+                placeholder="Ex: 12"
+                className="bg-zinc-900 text-white border border-white/10 focus:border-[#22c55e] focus:outline-none px-3 py-2 rounded-lg text-sm"
+                value={repeticoes}
+                onChange={(e) => setRepeticoes(e.target.value)}
+              />
+            </div>
           </div>
+
+          <button
+            disabled={loaderButton}
+            className="w-full font-bold py-3 bg-[#22c55e] text-black rounded-lg mt-2 hover:bg-green-400 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            onClick={handleSaveFicha}
+          >
+            {loaderButton ? (
+              <Loader size="sm" />
+            ) : (
+              <span>Salvar Ficha de Treino</span>
+            )}
+          </button>
         </div>
 
-        {/* Lista Lateral */}
-        <div className="max-w-xl mx-6 mt-8 bg-[#0f0f0f] border border-white/10 rounded-xl p-6">
-          <p className="text-lg font-semibold text-white mb-4">
-            Exercícios na ficha atual:
-          </p>
+        <div className="lg:col-span-5 bg-[#0f0f0f] border border-white/10 rounded-xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-base font-bold text-white">
+              Exercícios na Ficha
+            </p>
+            <span className="text-xs bg-zinc-800 text-zinc-400 px-2.5 py-1 rounded-full font-mono">
+              {exerciciosTreino.length}{" "}
+              {exerciciosTreino.length === 1 ? "item" : "itens"}
+            </span>
+          </div>
+
           {exerciciosTreino.length === 0 ? (
-            <div className="text-zinc-500 text-sm italic">
+            <div className="text-zinc-500 text-sm italic py-8 text-center border border-dashed border-zinc-800 rounded-lg">
               Nenhum exercício adicionado ainda.
             </div>
           ) : (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 max-h-[500px] overflow-y-auto pr-1">
               {exerciciosTreino.map((ex, index) => (
-                <CardFichaExercicios
+                <div
                   key={index}
-                  nome={ex.nome}
-                  series={ex.series}
-                  repeticoes={ex.repeticoes}
-                />
+                  className="flex items-center justify-between bg-zinc-900/80 border border-white/5 p-3 rounded-lg group hover:border-white/20 transition"
+                >
+                  <div className="flex-1 min-w-0 pr-3">
+                    <CardFichaExercicios
+                      nome={ex.nome}
+                      series={ex.series}
+                      repeticoes={ex.repeticoes}
+                    />
+                  </div>
+                  <button
+                    onClick={() => handleRemoveExercicio(index)}
+                    className="text-zinc-500 hover:text-red-400 p-2 transition cursor-pointer shrink-0"
+                    title="Remover da lista"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
               ))}
             </div>
           )}

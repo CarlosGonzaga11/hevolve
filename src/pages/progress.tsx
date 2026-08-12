@@ -21,9 +21,21 @@ interface DadoGrafico {
   carga: number;
 }
 
+interface SerieExecutadaJoin {
+  peso: number | string;
+  repeticoes?: number | string;
+  created_at?: string;
+  itens_treino?: {
+    exercicios?: Exercicio;
+    exercicio_id?: number;
+  };
+}
+
 export default function Progress() {
   const [dadosGrafico, setDadosGrafico] = useState<DadoGrafico[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loadingGeral, setLoadingGeral] = useState(false);
+  const [loadingGrafico, setLoadingGrafico] = useState(false);
+
   const [meusExercicios, setMeusExercicios] = useState<Exercicio[]>([]);
   const [categoriaFiltro, setCategoriaFiltro] = useState("Todos");
   const [quantidadeTreinoRealizado, setQuantidadeTreinoRealizado] =
@@ -44,12 +56,12 @@ export default function Progress() {
     "Abdominais",
   ];
 
+  const sanitizarTexto = (str: string) => str.replace(/<[^>]*>?/gm, "").trim();
+
   useEffect(() => {
     async function calcularVolume() {
       if (!user) return;
       try {
-        setLoading(true);
-
         const { data: series, error } = await supabase
           .from("series_executadas")
           .select("peso, repeticoes, treinos_realizados!inner(user_id)")
@@ -58,18 +70,19 @@ export default function Progress() {
         if (error) throw error;
 
         if (series) {
-          const tonelagemAcumulada = series.reduce((total, serie) => {
-            const peso = serie.peso || 0;
-            const reps = serie.repeticoes || 0;
-            return total + peso * reps;
-          }, 0);
+          const tonelagemAcumulada = (series as SerieExecutadaJoin[]).reduce(
+            (total, serie) => {
+              const peso = Number(serie.peso) || 0;
+              const reps = Number(serie.repeticoes) || 0;
+              return total + peso * reps;
+            },
+            0,
+          );
 
           setVolumeTotal(tonelagemAcumulada);
         }
       } catch (err) {
         console.error("Erro ao calcular o volume total:", err);
-      } finally {
-        setLoading(false);
       }
     }
 
@@ -81,7 +94,7 @@ export default function Progress() {
 
     async function carregarDadosIniciais() {
       try {
-        setLoading(true);
+        setLoadingGeral(true);
 
         const promiseExercicios = supabase
           .from("series_executadas")
@@ -120,7 +133,11 @@ export default function Progress() {
             const ex = item.itens_treino?.exercicios;
             if (ex && !idsVistos.has(ex.id)) {
               idsVistos.add(ex.id);
-              unicos.push(ex);
+              unicos.push({
+                id: ex.id,
+                nome: sanitizarTexto(ex.nome),
+                grupo_muscular: sanitizarTexto(ex.grupo_muscular || ""),
+              });
             }
           });
 
@@ -133,7 +150,7 @@ export default function Progress() {
       } catch (err: any) {
         console.error("Erro ao carregar dados iniciais:", err.message || err);
       } finally {
-        setLoading(false);
+        setLoadingGeral(false);
       }
     }
 
@@ -148,8 +165,20 @@ export default function Progress() {
       }
 
       try {
-        setLoading(true);
+        setLoadingGrafico(true);
         setDadosGrafico([]);
+
+        const exercicioPertenceAoUsuario = meusExercicios.some(
+          (ex) => Number(ex.id) === Number(idSelecionado),
+        );
+
+        if (meusExercicios.length > 0 && !exercicioPertenceAoUsuario) {
+          console.warn(
+            "Tentativa de acesso não autorizada ao exercício ID:",
+            idSelecionado,
+          );
+          return;
+        }
 
         const { data, error } = await supabase
           .from("series_executadas")
@@ -168,13 +197,18 @@ export default function Progress() {
         if (error) throw error;
 
         const agrupados = (data || []).reduce(
-          (acc: Record<string, number>, item: any) => {
+          (acc: Record<string, number>, item: SerieExecutadaJoin) => {
+            if (!item.created_at) return acc;
+
             const dataFormatada = new Date(item.created_at).toLocaleDateString(
               "pt-BR",
-              { day: "2-digit", month: "2-digit" },
+              {
+                day: "2-digit",
+                month: "2-digit",
+              },
             );
 
-            const pesoAtual = item.peso || 0;
+            const pesoAtual = Number(item.peso) || 0;
             if (!acc[dataFormatada] || pesoAtual > acc[dataFormatada]) {
               acc[dataFormatada] = pesoAtual;
             }
@@ -194,12 +228,12 @@ export default function Progress() {
       } catch (err) {
         console.error("Erro ao carregar progresso:", err);
       } finally {
-        setLoading(false);
+        setLoadingGrafico(false);
       }
     }
 
     carregarDadosGrafico();
-  }, [idSelecionado, user]);
+  }, [idSelecionado, user, meusExercicios]);
 
   const exerciciosFiltrados = meusExercicios.filter((ex) => {
     if (categoriaFiltro === "Todos") return true;
@@ -237,8 +271,9 @@ export default function Progress() {
 
         <div className="max-w-md">
           <select
-            className="w-full bg-[#0f0f0f] border border-[#B3B3B3]/20 text-white focus:border-[#22c55e] focus:outline-none py-2 px-3 rounded-lg"
+            className="w-full bg-[#0f0f0f] border border-[#B3B3B3]/20 text-white focus:border-[#22c55e] focus:outline-none py-2 px-3 rounded-lg disabled:opacity-50"
             value={idSelecionado || ""}
+            disabled={loadingGeral}
             onChange={(e) => {
               const val = e.target.value;
               setIdSelecionado(val ? Number(val) : "");
@@ -260,8 +295,8 @@ export default function Progress() {
             <p className="text-center text-zinc-500 italic">
               Escolha um exercício acima para ver seu progresso.
             </p>
-          ) : loading ? (
-            <div className="flex justify-center items-center">
+          ) : loadingGrafico ? (
+            <div className="flex justify-center items-center py-12">
               <Loader />
             </div>
           ) : dadosGrafico.length > 0 ? (
@@ -273,7 +308,6 @@ export default function Progress() {
           )}
         </div>
       </div>
-
       <div className="px-6">
         <h3 className="mt-10 mb-4 text-3xl font-semibold uppercase">
           Métricas
@@ -292,8 +326,9 @@ export default function Progress() {
           />
         </div>
 
-        <div className="mt-6 mb-12 relative">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm w-full h-full text-[#22c55e] font-bold text-4xl text-center items-center flex justify-center rounded z-10 animate-pulse">
+        {/*em breve secao */}
+        <div className="mt-6 mb-12 relative overflow-hidden rounded-xl">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm w-full h-full text-[#22c55e] font-bold text-3xl sm:text-4xl text-center items-center flex justify-center z-10 animate-pulse">
             EM BREVE...
           </div>
           <h3 className="text-2xl font-bold mb-4 pt-2">COMPARAÇÃO SEMANAL</h3>
@@ -304,6 +339,7 @@ export default function Progress() {
             <CardSemanal />
           </div>
         </div>
+
         <div>
           <AchievementList />
           <HistoryTrain />

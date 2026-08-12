@@ -8,12 +8,12 @@ import { AuthProvider } from "./context/AuthContext";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-   <HashRouter>
-    <AuthProvider>
-      <TrainProvider>
-        <App />
-      </TrainProvider>
-    </AuthProvider>
+    <HashRouter>
+      <AuthProvider>
+        <TrainProvider>
+          <App />
+        </TrainProvider>
+      </AuthProvider>
     </HashRouter>
-  </StrictMode>
+  </StrictMode>,
 );

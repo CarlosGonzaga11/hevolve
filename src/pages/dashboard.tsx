@@ -7,49 +7,61 @@ import {
   Trash,
   User,
   X,
+  Menu,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
-import type { User as SupabaseUser} from "@supabase/supabase-js";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
+
 export default function Dashboard() {
   const [open, setIsOpen] = useState(false);
- const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const navigate = useNavigate();
 
   async function handleLogout() {
     const { error } = await supabase.auth.signOut();
     if (error) {
-      console.log(error);
+      console.error("Erro ao encerrar sessão:", error);
       return;
     }
     navigate("/registro");
   }
 
   useEffect(() => {
-    async function loadUser() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      console.log(user);
+    supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
-    }
-    loadUser();
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
+  const getNavLinkClass = ({ isActive }: { isActive: boolean }) =>
+    `flex items-center gap-3 p-2.5 rounded transition-colors font-medium ${
+      isActive
+        ? "bg-[#22c55e] text-black font-bold"
+        : "text-zinc-300 hover:bg-zinc-800 hover:text-white"
+    }`;
+
   return (
-    <div className="text-white flex min-h-screen">
+    <div className="text-white flex min-h-screen bg-black">
       {open && (
         <div className="fixed inset-0 z-50 sm:hidden flex">
           <div
             onClick={() => setIsOpen(false)}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-300"
           />
 
           <div className="relative z-10 h-full w-64 bg-[#121212] p-4 flex flex-col justify-between border-r border-white/10">
             <div>
               <div className="flex justify-between items-center mb-6">
-                <span className="font-black text-lg text-[#22c55e]">
+                <span className="font-black text-lg text-[#22c55e] tracking-wider">
                   HEVOLVE
                 </span>
                 <button
@@ -62,51 +74,57 @@ export default function Dashboard() {
 
               <nav className="flex flex-col gap-2">
                 <NavLink
-                  to="/dashboard/treino"
+                  to="treino"
                   onClick={() => setIsOpen(false)}
-                  className="flex gap-3 p-2.5 hover:bg-[#22c55e] rounded transition-colors"
+                  className={getNavLinkClass}
                 >
-                  <Dumbbell size={20} /> Treino
+                  <Dumbbell size={20} />
+                  <span>Treino</span>
                 </NavLink>
 
                 <NavLink
-                  to="/dashboard/progress"
+                  to="progress"
                   onClick={() => setIsOpen(false)}
-                  className="flex gap-3 p-2.5 hover:bg-[#22c55e] rounded transition-colors"
+                  className={getNavLinkClass}
                 >
-                  <BarChart3 size={20} /> Progresso
+                  <BarChart3 size={20} />
+                  <span>Progresso</span>
                 </NavLink>
 
                 <NavLink
-                  to="/dashboard/create"
+                  to="chat"
                   onClick={() => setIsOpen(false)}
-                  className="flex gap-3 p-2.5 hover:bg-[#22c55e] rounded transition-colors"
+                  className={getNavLinkClass}
                 >
-                  <MessageCircle size={20} /> Chat
+                  <MessageCircle size={20} />
+                  <span>Chat</span>
                 </NavLink>
 
                 <NavLink
-                  to="/dashboard/create"
+                  to="create"
                   onClick={() => setIsOpen(false)}
-                  className="flex gap-3 p-2.5 hover:bg-[#22c55e] rounded transition-colors"
+                  className={getNavLinkClass}
                 >
-                  <FilePlus size={20} /> Criar Treino
+                  <FilePlus size={20} />
+                  <span>Criar Treino</span>
                 </NavLink>
 
                 <NavLink
-                  to="/dashboard/user"
+                  to="user"
                   onClick={() => setIsOpen(false)}
-                  className="flex gap-3 p-2.5 hover:bg-[#22c55e] rounded transition-colors"
+                  className={getNavLinkClass}
                 >
-                  <User size={20} /> Perfil
+                  <User size={20} />
+                  <span>Perfil</span>
                 </NavLink>
 
                 <NavLink
-                  to="/dashboard/lixeira"
+                  to="lixeira"
                   onClick={() => setIsOpen(false)}
-                  className="flex gap-3 p-2.5 hover:bg-[#22c55e] rounded transition-colors"
+                  className={getNavLinkClass}
                 >
-                  <Trash size={20} /> Lixeira
+                  <Trash size={20} />
+                  <span>Lixeira</span>
                 </NavLink>
               </nav>
             </div>
@@ -114,14 +132,17 @@ export default function Dashboard() {
             {user && (
               <div className="border-t border-white/10 pt-4">
                 <div className="flex gap-3 items-center mb-3">
-                  <img
-                    src={
-                      user.user_metadata?.avatar_url ||
-                      "https://via.placeholder.com/40"
-                    }
-                    alt="Perfil"
-                    className="w-10 h-10 rounded-full border border-white/10 object-cover"
-                  />
+                  <div className="w-10 h-10 rounded-full bg-zinc-800 border border-white/10 overflow-hidden flex items-center justify-center shrink-0">
+                    {user.user_metadata?.avatar_url ? (
+                      <img
+                        src={user.user_metadata.avatar_url}
+                        alt="Perfil"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="text-zinc-400" size={20} />
+                    )}
+                  </div>
                   <div className="flex flex-col leading-tight overflow-hidden">
                     <span className="font-bold text-sm truncate">
                       {user.user_metadata?.full_name || "Usuário"}
@@ -134,7 +155,7 @@ export default function Dashboard() {
 
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded transition-colors border border-red-500/20 text-sm font-medium"
+                  className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded transition-colors border border-red-500/20 text-sm font-medium cursor-pointer"
                 >
                   <LogOut size={16} />
                   <span>Desconectar</span>
@@ -148,59 +169,53 @@ export default function Dashboard() {
       {!open && (
         <button
           onClick={() => setIsOpen(true)}
-          className="sm:hidden fixed top-4 left-4 z-40 bg-[#121212] border border-white/10 p-2.5 rounded text-white shadow-lg"
+          className="sm:hidden fixed top-4 left-4 z-40 bg-[#121212] border border-white/10 p-2.5 rounded-lg text-white shadow-lg cursor-pointer hover:bg-zinc-800"
         >
-          ☰
+          <Menu size={20} />
         </button>
       )}
 
-      {/* pc*/}
-      <div className="hidden md:flex flex-col w-75 justify-between h-screen bg-[#121212] border-r border-[#D9D9D9]/10 sticky top-0">
+      <aside className="hidden md:flex flex-col w-72 justify-between h-screen bg-[#121212] border-r border-white/10 sticky top-0 shrink-0">
         <div>
           <Link
             to="/"
-            className="flex flex-row items-center gap-2 py-4 px-8 border-b border-[#D9D9D9]/10"
+            className="flex flex-row items-center gap-3 py-5 px-6 border-b border-white/10"
           >
-            <Dumbbell color="#22c55e" className="w-10 h-10" />
-            <span className="uppercase text-2xl font-black tracking-wider">
+            <Dumbbell className="w-8 h-8 text-[#22c55e]" />
+            <span className="uppercase text-xl font-black tracking-wider text-white">
               HEVOLVE
             </span>
           </Link>
-          <div className="mt-8 text-base flex px-4 flex-col">
-            <nav className="flex flex-col gap-2">
-              <NavLink
-                to="treino"
-                className="flex gap-3 p-2.5 hover:bg-[#22c55e] rounded transition-colors"
-              >
-                <Dumbbell size={22} />
+
+          <div className="mt-6 px-4">
+            <nav className="flex flex-col gap-1.5">
+              <NavLink to="treino" className={getNavLinkClass}>
+                <Dumbbell size={20} />
                 <span>Treino</span>
               </NavLink>
-              <NavLink
-                to="progress"
-                className="flex gap-3 p-2.5 hover:bg-[#22c55e] rounded transition-colors"
-              >
-                <BarChart3 size={22} />
+
+              <NavLink to="progress" className={getNavLinkClass}>
+                <BarChart3 size={20} />
                 <span>Progresso</span>
               </NavLink>
-              <NavLink
-                to="create"
-                className="flex gap-3 p-2.5 hover:bg-[#22c55e] rounded transition-colors"
-              >
-                <FilePlus size={22} />
+
+              <NavLink to="chat" className={getNavLinkClass}>
+                <MessageCircle size={20} />
+                <span>Chat AI</span>
+              </NavLink>
+
+              <NavLink to="create" className={getNavLinkClass}>
+                <FilePlus size={20} />
                 <span>Criar Treino</span>
               </NavLink>
-              <NavLink
-                to="user"
-                className="flex gap-3 p-2.5 hover:bg-[#22c55e] rounded transition-colors"
-              >
-                <User size={22} />
+
+              <NavLink to="user" className={getNavLinkClass}>
+                <User size={20} />
                 <span>Perfil</span>
               </NavLink>
-              <NavLink
-                to="lixeira"
-                className="flex gap-3 p-2.5 hover:bg-[#22c55e] rounded transition-colors"
-              >
-                <Trash size={22} />
+
+              <NavLink to="lixeira" className={getNavLinkClass}>
+                <Trash size={20} />
                 <span>Lixeira</span>
               </NavLink>
             </nav>
@@ -208,36 +223,38 @@ export default function Dashboard() {
         </div>
 
         {user && (
-          <div className="flex gap-4 items-center px-6 py-6 border-t border-white/10">
-            <img
-              src={
-                user.user_metadata?.avatar_url ||
-                "https://via.placeholder.com/40"
-              }
-              alt="Perfil"
-              className="w-10 h-10 rounded-full border border-white/10 object-cover"
-            />
-            <div className="flex flex-col items-start leading-none overflow-hidden gap-2">
-              <span className="font-bold truncate max-w-30">
+          <div className="flex items-center gap-3 px-5 py-4 border-t border-white/10 bg-zinc-950/40">
+            <div className="w-10 h-10 rounded-full bg-zinc-800 border border-white/10 overflow-hidden flex items-center justify-center shrink-0">
+              {user.user_metadata?.avatar_url ? (
+                <img
+                  src={user.user_metadata.avatar_url}
+                  alt="Perfil"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User className="text-zinc-400" size={20} />
+              )}
+            </div>
+
+            <div className="flex flex-col overflow-hidden min-w-0 flex-1">
+              <span className="font-bold text-sm truncate text-white">
                 {user.user_metadata?.full_name || "Usuário"}
               </span>
               <button
                 onClick={handleLogout}
-                className="cursor-pointer  flex items-center justify-c gap-2  px-3 
-                 hover:bg-red-500/20 text-red-400 rounded transition-colors 
-                  border-red-500/20 text-sm font-medium"
+                className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 font-medium transition cursor-pointer mt-0.5"
               >
-                <LogOut size={16} />
+                <LogOut size={14} />
                 <span>Sair</span>
               </button>
             </div>
           </div>
         )}
-      </div>
+      </aside>
 
-      <div className="flex-1 h-screen overflow-y-auto">
+      <main className="flex-1 h-screen overflow-y-auto bg-black">
         <Outlet />
-      </div>
+      </main>
     </div>
   );
 }
