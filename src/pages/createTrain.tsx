@@ -1,18 +1,33 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useTrain } from "../context/TrainContext";
 import CardFichaExercicios from "../components/cardFichaExercicios";
 import Loader from "../components/loader";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 
-export default function App() {
-  const [exerciciosTreino, setExerciciosTreino] = useState([]);
-  const [nomeExercicioInput, setNomeExercicioInput] = useState("");
-  const [nomeTreino, setNomeTreino] = useState("");
-  const [categoriaSelecionada, setCategoriaSelecionada] = useState("Todos");
-  const [loaderButton, setLoaderButton] = useState(false);
+export interface ExercicioItem {
+  id: number | null;
+  nome: string;
+  grupo_muscular: string;
+  series: number;
+  repeticoes: number;
+}
 
-  const categorias = [
+export interface DBExercicio {
+  id: number;
+  nome: string;
+  grupo_muscular: string;
+}
+
+export default function App() {
+  const [exerciciosTreino, setExerciciosTreino] = useState<ExercicioItem[]>([]);
+  const [nomeExercicioInput, setNomeExercicioInput] = useState<string>("");
+  const [nomeTreino, setNomeTreino] = useState<string>("");
+  const [categoriaSelecionada, setCategoriaSelecionada] =
+    useState<string>("Todos");
+  const [loaderButton, setLoaderButton] = useState<boolean>(false);
+
+  const categorias: string[] = [
     "Todos",
     "Peito",
     "Costas",
@@ -30,33 +45,42 @@ export default function App() {
     series,
     repeticoes,
     listaExerciciosDB = [],
-  } = useTrain();
+  } = useTrain() as {
+    salvarTreino: (nome: string, exercicios: ExercicioItem[]) => Promise<void>;
+    setSeries: (val: string) => void;
+    setRepeticoes: (val: string) => void;
+    series: string | number;
+    repeticoes: string | number;
+    listaExerciciosDB: DBExercicio[];
+  };
 
   const exerciciosFiltrados = listaExerciciosDB.filter((ex) => {
     if (categoriaSelecionada === "Todos") return true;
     return ex.grupo_muscular === categoriaSelecionada;
   });
 
-  function handleAddExercicio() {
+  function handleAddExercicio(): void {
     const nomeFormatado = nomeExercicioInput.trim();
     if (!nomeFormatado) {
-      return toast.error("Escreva ou selecione um exercício primeiro");
+      toast.error("Escreva ou selecione um exercício primeiro");
+      return;
     }
 
     const numSeries = Number(series);
     const numReps = Number(repeticoes);
 
     if (!numSeries || numSeries <= 0 || !numReps || numReps <= 0) {
-      return toast.error("Informe valores válidos para séries e repetições");
+      toast.error("Informe valores válidos para séries e repetições");
+      return;
     }
 
-    // Verifica se o exercício já existe na lista temporária
     const jaAdicionado = exerciciosTreino.some(
       (ex) => ex.nome.toLowerCase() === nomeFormatado.toLowerCase(),
     );
 
     if (jaAdicionado) {
-      return toast.warning("Este exercício já foi adicionado a esta ficha");
+      toast.warning("Este exercício já foi adicionado a esta ficha");
+      return;
     }
 
     const exercicioExistente = listaExerciciosDB.find(
@@ -68,7 +92,7 @@ export default function App() {
         ? exercicioExistente?.grupo_muscular || "Geral"
         : categoriaSelecionada;
 
-    const novoItem = {
+    const novoItem: ExercicioItem = {
       id: exercicioExistente ? exercicioExistente.id : null,
       nome: nomeFormatado,
       grupo_muscular: grupoMuscular,
@@ -76,25 +100,27 @@ export default function App() {
       repeticoes: numReps,
     };
 
-    setExerciciosTreino([...exerciciosTreino, novoItem]);
+    setExerciciosTreino((prev) => [...prev, novoItem]);
     setNomeExercicioInput("");
     toast.success("Exercício adicionado à ficha");
   }
 
-  function handleRemoveExercicio(indexParaRemover) {
+  function handleRemoveExercicio(indexParaRemover: number): void {
     setExerciciosTreino((prev) =>
       prev.filter((_, index) => index !== indexParaRemover),
     );
     toast.info("Exercício removido");
   }
 
-  async function handleSaveFicha() {
+  async function handleSaveFicha(): Promise<void> {
     if (!nomeTreino.trim()) {
-      return toast.warning("Dê um nome ao treino antes de salvar");
+      toast.warning("Dê um nome ao treino antes de salvar");
+      return;
     }
 
     if (exerciciosTreino.length === 0) {
-      return toast.warning("Adicione pelo menos um exercício à ficha");
+      toast.warning("Adicione pelo menos um exercício à ficha");
+      return;
     }
 
     try {
@@ -102,7 +128,6 @@ export default function App() {
       await salvarTreino(nomeTreino, exerciciosTreino);
       toast.success("Treino salvo com sucesso!", { position: "bottom-center" });
 
-      // Reset completo do formulário
       setExerciciosTreino([]);
       setNomeTreino("");
       setNomeExercicioInput("");
@@ -139,7 +164,9 @@ export default function App() {
             </label>
             <input
               value={nomeTreino}
-              onChange={(e) => setNomeTreino(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setNomeTreino(e.target.value)
+              }
               placeholder="Ex: Treino A - Peito e Tríceps"
               className="bg-zinc-900 text-white border border-white/10 focus:border-[#22c55e] focus:outline-none px-3 py-2.5 rounded-lg text-sm transition"
             />
@@ -175,7 +202,9 @@ export default function App() {
               <input
                 list="opcoes-exercicios"
                 value={nomeExercicioInput}
-                onChange={(e) => setNomeExercicioInput(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setNomeExercicioInput(e.target.value)
+                }
                 placeholder="Digite ou selecione da lista..."
                 className="bg-zinc-900 flex-1 text-white border border-white/10 focus:border-[#22c55e] focus:outline-none px-3 py-2.5 rounded-lg text-sm transition"
               />
@@ -210,7 +239,9 @@ export default function App() {
                 placeholder="Ex: 4"
                 className="bg-zinc-900 text-white border border-white/10 focus:border-[#22c55e] focus:outline-none px-3 py-2 rounded-lg text-sm"
                 value={series}
-                onChange={(e) => setSeries(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setSeries(e.target.value)
+                }
               />
             </div>
 
@@ -224,7 +255,9 @@ export default function App() {
                 placeholder="Ex: 12"
                 className="bg-zinc-900 text-white border border-white/10 focus:border-[#22c55e] focus:outline-none px-3 py-2 rounded-lg text-sm"
                 value={repeticoes}
-                onChange={(e) => setRepeticoes(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setRepeticoes(e.target.value)
+                }
               />
             </div>
           </div>
@@ -258,7 +291,7 @@ export default function App() {
               Nenhum exercício adicionado ainda.
             </div>
           ) : (
-            <div className="flex flex-col gap-3 max-h-[500px] overflow-y-auto pr-1">
+            <div className="flex flex-col gap-3 max-h-125 overflow-y-auto pr-1">
               {exerciciosTreino.map((ex, index) => (
                 <div
                   key={index}

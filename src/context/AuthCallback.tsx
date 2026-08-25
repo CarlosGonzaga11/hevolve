@@ -7,13 +7,11 @@ export default function AuthCallback() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Processa a sessão que veio no hash da URL (#access_token=...)
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error || !session) {
         console.error("Erro ao validar login no callback:", error);
         navigate("/", { replace: true });
       } else {
-        // Token validado com sucesso! Agora sim vai para o dashboard
         navigate("/dashboard/treino", { replace: true });
       }
     });

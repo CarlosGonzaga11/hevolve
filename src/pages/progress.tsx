@@ -8,7 +8,6 @@ import Metric from "../components/cardMetric";
 import { Flame, Scale } from "lucide-react";
 import CardSemanal from "../components/cardSemanal";
 import { useAuth } from "../context/AuthContext";
-import AchievementList from "../components/ArchievementsList";
 
 interface Exercicio {
   id: number;
@@ -28,16 +27,16 @@ interface SerieExecutadaJoin {
   itens_treino?: {
     exercicios?: Exercicio;
     exercicio_id?: number;
-  };
+  } | null;
 }
 
 export default function Progress() {
   const [dadosGrafico, setDadosGrafico] = useState<DadoGrafico[]>([]);
-  const [loadingGeral, setLoadingGeral] = useState(false);
-  const [loadingGrafico, setLoadingGrafico] = useState(false);
+  const [loadingGeral, setLoadingGeral] = useState<boolean>(false);
+  const [loadingGrafico, setLoadingGrafico] = useState<boolean>(false);
 
   const [meusExercicios, setMeusExercicios] = useState<Exercicio[]>([]);
-  const [categoriaFiltro, setCategoriaFiltro] = useState("Todos");
+  const [categoriaFiltro, setCategoriaFiltro] = useState<string>("Todos");
   const [quantidadeTreinoRealizado, setQuantidadeTreinoRealizado] =
     useState<number>(0);
   const [volumeTotal, setVolumeTotal] = useState<number>(0);
@@ -70,14 +69,13 @@ export default function Progress() {
         if (error) throw error;
 
         if (series) {
-          const tonelagemAcumulada = (series as SerieExecutadaJoin[]).reduce(
-            (total, serie) => {
-              const peso = Number(serie.peso) || 0;
-              const reps = Number(serie.repeticoes) || 0;
-              return total + peso * reps;
-            },
-            0,
-          );
+          const tonelagemAcumulada = (
+            series as unknown as SerieExecutadaJoin[]
+          ).reduce((total, serie) => {
+            const peso = Number(serie.peso) || 0;
+            const reps = Number(serie.repeticoes) || 0;
+            return total + peso * reps;
+          }, 0);
 
           setVolumeTotal(tonelagemAcumulada);
         }
@@ -93,6 +91,7 @@ export default function Progress() {
     if (!user) return;
 
     async function carregarDadosIniciais() {
+      if (!user) return;
       try {
         setLoadingGeral(true);
 
@@ -196,26 +195,25 @@ export default function Progress() {
 
         if (error) throw error;
 
-        const agrupados = (data || []).reduce(
-          (acc: Record<string, number>, item: SerieExecutadaJoin) => {
-            if (!item.created_at) return acc;
+        const agrupados = (
+          (data as unknown as SerieExecutadaJoin[]) || []
+        ).reduce((acc: Record<string, number>, item) => {
+          if (!item.created_at) return acc;
 
-            const dataFormatada = new Date(item.created_at).toLocaleDateString(
-              "pt-BR",
-              {
-                day: "2-digit",
-                month: "2-digit",
-              },
-            );
+          const dataFormatada = new Date(item.created_at).toLocaleDateString(
+            "pt-BR",
+            {
+              day: "2-digit",
+              month: "2-digit",
+            },
+          );
 
-            const pesoAtual = Number(item.peso) || 0;
-            if (!acc[dataFormatada] || pesoAtual > acc[dataFormatada]) {
-              acc[dataFormatada] = pesoAtual;
-            }
-            return acc;
-          },
-          {},
-        );
+          const pesoAtual = Number(item.peso) || 0;
+          if (!acc[dataFormatada] || pesoAtual > acc[dataFormatada]) {
+            acc[dataFormatada] = pesoAtual;
+          }
+          return acc;
+        }, {});
 
         const formatados: DadoGrafico[] = Object.keys(agrupados).map(
           (dataStr) => ({
@@ -256,7 +254,7 @@ export default function Progress() {
               key={cat}
               onClick={() => {
                 setCategoriaFiltro(cat);
-                setIdSelecionado("");
+                setIdSelecionado(null);
               }}
               className={`px-3 py-1 rounded-full text-xs font-bold transition ${
                 categoriaFiltro === cat
@@ -272,11 +270,11 @@ export default function Progress() {
         <div className="max-w-md">
           <select
             className="w-full bg-[#0f0f0f] border border-[#B3B3B3]/20 text-white focus:border-[#22c55e] focus:outline-none py-2 px-3 rounded-lg disabled:opacity-50"
-            value={idSelecionado || ""}
+            value={idSelecionado ?? ""}
             disabled={loadingGeral}
             onChange={(e) => {
               const val = e.target.value;
-              setIdSelecionado(val ? Number(val) : "");
+              setIdSelecionado(val ? Number(val) : null);
             }}
           >
             <option value="">
@@ -290,7 +288,7 @@ export default function Progress() {
           </select>
         </div>
 
-        <div className="mt-8 bg-[#0f0f0f] border border-white/5 rounded-2xl p-6 min-h-[300px] flex flex-col justify-center">
+        <div className="mt-8 bg-[#0f0f0f] border border-white/5 rounded-2xl p-6 min-h-75 flex flex-col justify-center">
           {!idSelecionado ? (
             <p className="text-center text-zinc-500 italic">
               Escolha um exercício acima para ver seu progresso.
@@ -308,6 +306,7 @@ export default function Progress() {
           )}
         </div>
       </div>
+
       <div className="px-6">
         <h3 className="mt-10 mb-4 text-3xl font-semibold uppercase">
           Métricas
@@ -326,7 +325,7 @@ export default function Progress() {
           />
         </div>
 
-        {/*em breve secao */}
+        {/* em breve secao */}
         <div className="mt-6 mb-12 relative overflow-hidden rounded-xl">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm w-full h-full text-[#22c55e] font-bold text-3xl sm:text-4xl text-center items-center flex justify-center z-10 animate-pulse">
             EM BREVE...
@@ -341,7 +340,6 @@ export default function Progress() {
         </div>
 
         <div>
-          <AchievementList />
           <HistoryTrain />
         </div>
       </div>

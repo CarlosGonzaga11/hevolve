@@ -1,5 +1,14 @@
-export default function Loader({ size = "md", className = "" }) {
-  const sizes = {
+import type { HTMLAttributes } from "react";
+
+type LoaderSize = "sm" | "md" | "lg" | "xl";
+
+interface LoaderProps extends HTMLAttributes<HTMLSpanElement> {
+  size?: LoaderSize;
+  className?: string;
+}
+
+export default function Loader({ size = "md", className = "", ...props }: LoaderProps) {
+  const sizes: Record<LoaderSize, string> = {
     sm: "w-4 h-4 border-2",
     md: "w-8 h-8 border-[3px]",
     lg: "w-12 h-12 border-4",
@@ -8,6 +17,7 @@ export default function Loader({ size = "md", className = "" }) {
 
   return (
     <span
+      {...props}
       className={`
         inline-block
         shrink-0

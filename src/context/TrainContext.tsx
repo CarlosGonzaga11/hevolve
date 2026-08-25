@@ -1,19 +1,140 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 import { supabase } from "../supabase";
 import { toast } from "sonner";
 import { useAuth } from "./AuthContext";
 
-const TrainContext = createContext();
+export type Serie = {
+  id: number;
+  items_treino_id: number;
+  numero_serie: number;
+  peso: number;
+  repeticoes: number;
+  treino_id: number;
+};
 
-export function TrainProvider({ children }) {
+export type Exercicios = {
+  id: number;
+  nome: string;
+  grupo_muscular: string;
+  user_id: string | null;
+};
+
+export type ItemTreino = {
+  id: number;
+  exercicio_id: number;
+  series: number;
+  repeticoes: number;
+  exercicios: {
+    nome: string;
+  } | null;
+};
+
+export interface ExercicioItem {
+  id: number | null;
+  nome: string;
+  grupo_muscular: string;
+  series: number;
+  repeticoes: number;
+}
+
+export interface DBExercicio {
+  id: number;
+  nome: string;
+  grupo_muscular: string;
+}
+
+export type Ficha = {
+  id: number;
+  nome: string;
+  concluido: boolean;
+  deletado: boolean;
+  user_id: string;
+  itens_treino?: ItemTreino[];
+};
+
+export type SerieExecutadaInput = {
+  item_treino_id: number;
+  numero_serie: number;
+  peso: number;
+  repeticoes: number;
+};
+
+export type ExercicioInput = {
+  id?: number | null;
+  nome: string;
+  grupo_muscular?: string;
+  series?: number;
+  repeticoes?: number;
+};
+
+export type ProgressoExercicio = {
+  data: string;
+  carga: number;
+};
+
+export type UltimaCarga = {
+  peso: number;
+  repeticoes: number;
+  created_at: string;
+};
+
+export interface TrainContextType {
+  listaTreinosSalvos: Ficha[];
+  treinosDeletados: Ficha[];
+  listaExerciciosDB: Exercicios[];
+  series: number | string;
+  setSeries: React.Dispatch<React.SetStateAction<number | string>>;
+  repeticoes: number | string;
+  setRepeticoes: React.Dispatch<React.SetStateAction<number | string>>;
+  idSelecionado: number | null;
+  setIdSelecionado: React.Dispatch<React.SetStateAction<number | null>>;
+  loading: boolean;
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  setTreinosDeletados: React.Dispatch<React.SetStateAction<Ficha[]>>;
+
+  buscarTreinos: () => Promise<void>;
+  deleteCardTreino: (id: number) => Promise<void>;
+  salvarTreino: (nome: string, itens: ExercicioInput[]) => Promise<void>;
+  atualizarSerie: (
+    serieId: number,
+    novosDados: Partial<Serie>
+  ) => Promise<void>;
+  finalizarTreino: (id: number) => Promise<void>;
+  restaurarTreino: (id: number) => Promise<void>;
+  excluirDefinitivamente: (id: number) => Promise<void>;
+  buscarTreinosDeletados: () => Promise<void>;
+  buscarProgressoExercicio: (
+    exercicioId: number
+  ) => Promise<ProgressoExercicio[]>;
+  finalizarTreinoComHistorico: (
+    fichaId: number,
+    dadosDasSeries: SerieExecutadaInput[]
+  ) => Promise<void>;
+  buscarUltimaCarga: (itemTreinoId: number) => Promise<UltimaCarga | null>;
+  buscarDadosParaExecucao: (fichaId: number) => Promise<any>;
+}
+
+type TrainContextProps = {
+  children: ReactNode;
+};
+
+const TrainContext = createContext<TrainContextType | null>(null);
+
+export function TrainProvider({ children }: TrainContextProps) {
   const { user } = useAuth();
-  const [listaTreinosSalvos, setListaTreinosSalvos] = useState([]);
-  const [series, setSeries] = useState(3);
-  const [repeticoes, setRepeticoes] = useState(12);
-  const [idSelecionado, setIdSelecionado] = useState(null);
-  const [treinosDeletados, setTreinosDeletados] = useState([]);
-  const [listaExerciciosDB, setListaExerciciosDB] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [listaTreinosSalvos, setListaTreinosSalvos] = useState<Ficha[]>([]);
+  const [series, setSeries] = useState<number | string>(3);
+  const [repeticoes, setRepeticoes] = useState<number | string>(12);
+  const [idSelecionado, setIdSelecionado] = useState<number | null>(null);
+  const [treinosDeletados, setTreinosDeletados] = useState<Ficha[]>([]);
+  const [listaExerciciosDB, setListaExerciciosDB] = useState<Exercicios[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     if (user) {
@@ -26,13 +147,12 @@ export function TrainProvider({ children }) {
     }
   }, [user]);
 
-  // Funcao utilitaria para sanitizar inputs de texto contra XSS
-  function sanitizarTexto(texto) {
+  function sanitizarTexto(texto: string): string {
     if (typeof texto !== "string") return "";
     return texto.replace(/<[^>]*>?/gm, "").trim();
   }
 
-  async function buscarTodosExercicios() {
+  async function buscarTodosExercicios(): Promise<void> {
     if (!user) return;
     const { data, error } = await supabase
       .from("exercicios")
@@ -41,13 +161,14 @@ export function TrainProvider({ children }) {
       .order("nome", { ascending: true });
 
     if (error) console.error("Erro ao carregar biblioteca:", error);
-    else setListaExerciciosDB(data || []);
+    else setListaExerciciosDB((data as Exercicios[]) || []);
   }
 
-  async function buscarProgressoExercicio(exercicioId) {
+  async function buscarProgressoExercicio(
+    exercicioId: number
+  ): Promise<ProgressoExercicio[]> {
     if (!user) return [];
 
-    // CORREÇÃO (IDOR/RLS): Filtra obrigatoriamente pelo user.id
     const { data, error } = await supabase
       .from("series_executadas")
       .select("peso, criada_em")
@@ -65,7 +186,7 @@ export function TrainProvider({ children }) {
     }));
   }
 
-  async function buscarTreinos() {
+  async function buscarTreinos(): Promise<void> {
     if (!user) return;
     const { data, error } = await supabase
       .from("fichas")
@@ -75,6 +196,7 @@ export function TrainProvider({ children }) {
         nome,
         concluido,
         deletado,
+        user_id,
         itens_treino (
           id,
           exercicio_id,
@@ -84,19 +206,18 @@ export function TrainProvider({ children }) {
             nome
           )
         )
-      `,
+      `
       )
       .eq("user_id", user.id)
       .eq("deletado", false);
 
     if (error) console.error("Erro ao buscar:", error);
-    else setListaTreinosSalvos(data || []);
+    else setListaTreinosSalvos((data as unknown as Ficha[]) || []);
   }
 
-  async function buscarDadosParaExecucao(fichaId) {
+  async function buscarDadosParaExecucao(fichaId: number): Promise<any> {
     if (!user) return;
 
-    // CORREÇÃO (IDOR): Garante que a ficha requisitada pertence ao usuario logado
     const { data, error } = await supabase
       .from("itens_treino")
       .select(
@@ -109,7 +230,7 @@ export function TrainProvider({ children }) {
           numero_serie,
           criada_em
         )
-      `,
+      `
       )
       .eq("ficha_id", fichaId)
       .eq("user_id", user.id);
@@ -118,7 +239,7 @@ export function TrainProvider({ children }) {
     return data;
   }
 
-  async function buscarTreinosDeletados() {
+  async function buscarTreinosDeletados(): Promise<void> {
     if (!user) return;
     const { data, error } = await supabase
       .from("fichas")
@@ -127,13 +248,15 @@ export function TrainProvider({ children }) {
       .eq("deletado", true);
 
     if (error) console.error("Erro ao buscar lixeira:", error);
-    else setTreinosDeletados(data || []);
+    else setTreinosDeletados((data as Ficha[]) || []);
   }
 
-  async function atualizarSerie(serieId, novosDados) {
+  async function atualizarSerie(
+    serieId: number,
+    novosDados: Partial<Serie>
+  ): Promise<void> {
     if (!user) return;
 
-    // CORREÇÃO (IDOR/RLS): Garante que apenas series do próprio usuário sejam alteradas
     const { error } = await supabase
       .from("series_executadas")
       .update(novosDados)
@@ -143,7 +266,10 @@ export function TrainProvider({ children }) {
     if (error) console.error("Erro ao atualizar série:", error);
   }
 
-  async function salvarTreino(nome, itens) {
+  async function salvarTreino(
+    nome: string,
+    itens: ExercicioInput[]
+  ): Promise<void> {
     if (!user) {
       toast.error("Você precisa estar logado para salvar um treino.");
       return;
@@ -154,6 +280,9 @@ export function TrainProvider({ children }) {
       toast.error("Insira um nome válido para o treino.");
       return;
     }
+
+    const defaultSeries = Number(series) || 3;
+    const defaultReps = Number(repeticoes) || 12;
 
     const itensFormatados = await Promise.all(
       itens.map(async (ex) => {
@@ -171,12 +300,12 @@ export function TrainProvider({ children }) {
           if (existente) {
             exercicioId = existente.id;
           } else {
-            // CORREÇÃO (XSS): Sanitiza nome e grupo muscular antes de salvar no BD
             const { data: novoExercicio, error: errEx } = await supabase
               .from("exercicios")
               .insert({
                 nome: nomeExercicioSanitizado,
-                grupo_muscular: sanitizarTexto(ex.grupo_muscular) || "Geral",
+                grupo_muscular:
+                  sanitizarTexto(ex.grupo_muscular || "") || "Geral",
                 user_id: user.id,
               })
               .select("id")
@@ -189,13 +318,12 @@ export function TrainProvider({ children }) {
 
         return {
           exercicio_id: exercicioId,
-          series: Number(ex.series) || series,
-          repeticoes: Number(ex.repeticoes) || repeticoes,
+          series: Number(ex.series) || defaultSeries,
+          repeticoes: Number(ex.repeticoes) || defaultReps,
         };
-      }),
+      })
     );
 
-    // CORREÇÃO (XSS): Grava nome sanitizado
     const { data: ficha, error: errFicha } = await supabase
       .from("fichas")
       .insert([{ nome: nomeFichaSanitizado, user_id: user.id }])
@@ -221,10 +349,12 @@ export function TrainProvider({ children }) {
     await buscarTreinos();
   }
 
-  async function finalizarTreinoComHistorico(fichaId, dadosDasSeries) {
+  async function finalizarTreinoComHistorico(
+    fichaId: number,
+    dadosDasSeries: SerieExecutadaInput[]
+  ): Promise<void> {
     if (!user) return;
     try {
-      // CORREÇÃO (IDOR): Valida se a ficha pertence ao usuário logado
       const { data: fichaPertenceUser, error: errValida } = await supabase
         .from("fichas")
         .select("id")
@@ -253,7 +383,7 @@ export function TrainProvider({ children }) {
       const historico = dadosDasSeries.map((s) => ({
         treino_id: treino.id,
         item_treino_id: s.item_treino_id,
-        user_id: user.id, // Adicionado user_id explicitamente para RLS
+        user_id: user.id,
         numero_serie: Number(s.numero_serie),
         peso: Number(s.peso),
         repeticoes: Number(s.repeticoes),
@@ -292,12 +422,12 @@ export function TrainProvider({ children }) {
         toast.success("✅ Ciclo de treinos resetado com sucesso!");
       }
       await buscarTreinos();
-    } catch (error) {
-      console.error("Erro na lógica de histórico:", error.message);
+    } catch (error: any) {
+      console.error("Erro na lógica de histórico:", error.message || error);
     }
   }
 
-  async function deleteCardTreino(id) {
+  async function deleteCardTreino(id: number): Promise<void> {
     if (!user) return;
     const { error } = await supabase
       .from("fichas")
@@ -309,7 +439,7 @@ export function TrainProvider({ children }) {
     else buscarTreinos();
   }
 
-  async function finalizarTreino(id) {
+  async function finalizarTreino(id: number): Promise<void> {
     if (!user) return;
     const { error } = await supabase
       .from("fichas")
@@ -324,7 +454,7 @@ export function TrainProvider({ children }) {
     }
   }
 
-  async function restaurarTreino(id) {
+  async function restaurarTreino(id: number): Promise<void> {
     if (!user) return;
     const { error } = await supabase
       .from("fichas")
@@ -338,7 +468,7 @@ export function TrainProvider({ children }) {
     }
   }
 
-  async function excluirDefinitivamente(id) {
+  async function excluirDefinitivamente(id: number): Promise<void> {
     if (!user) return;
     await supabase
       .from("itens_treino")
@@ -353,10 +483,11 @@ export function TrainProvider({ children }) {
     toast.success("Treino excluído com sucesso!");
   }
 
-  async function buscarUltimaCarga(itemTreinoId) {
+  async function buscarUltimaCarga(
+    itemTreinoId: number
+  ): Promise<UltimaCarga | null> {
     if (!user) return null;
 
-    // CORREÇÃO (IDOR/RLS): Filtra obrigatoriamente pelo user.id
     const { data, error } = await supabase
       .from("series_executadas")
       .select("peso, repeticoes, created_at")
@@ -367,7 +498,7 @@ export function TrainProvider({ children }) {
       .maybeSingle();
 
     if (error || !data) return null;
-    return data;
+    return data as UltimaCarga;
   }
 
   return (
@@ -404,4 +535,10 @@ export function TrainProvider({ children }) {
   );
 }
 
-export const useTrain = () => useContext(TrainContext);
+export const useTrain = () => {
+  const context = useContext(TrainContext);
+  if (!context) {
+    throw new Error("useTrain deve ser usado dentro de um TrainProvider");
+  }
+  return context;
+};

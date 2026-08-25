@@ -1,6 +1,11 @@
+import type { ReactNode } from "react";
 import { Toaster } from "sonner";
 
-export default function RootLayout({ children }) {
+
+interface RootLayoutProps {
+  children: ReactNode;
+}
+export default function RootLayout({ children }:RootLayoutProps) {
   return (
     <html lang="en">
       <head />
