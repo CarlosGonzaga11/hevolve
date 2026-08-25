@@ -325,7 +325,6 @@ export default function Progress() {
           />
         </div>
 
-        {/* em breve secao */}
         <div className="mt-6 mb-12 relative overflow-hidden rounded-xl">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm w-full h-full text-[#22c55e] font-bold text-3xl sm:text-4xl text-center items-center flex justify-center z-10 animate-pulse">
             EM BREVE...

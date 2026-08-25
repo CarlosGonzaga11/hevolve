@@ -23,8 +23,7 @@ export default function App() {
   const [exerciciosTreino, setExerciciosTreino] = useState<ExercicioItem[]>([]);
   const [nomeExercicioInput, setNomeExercicioInput] = useState<string>("");
   const [nomeTreino, setNomeTreino] = useState<string>("");
-  const [categoriaSelecionada, setCategoriaSelecionada] =
-    useState<string>("Todos");
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState<string>("Todos");
   const [loaderButton, setLoaderButton] = useState<boolean>(false);
 
   const categorias: string[] = [
@@ -54,9 +53,15 @@ export default function App() {
     listaExerciciosDB: DBExercicio[];
   };
 
+  // Ajuste aqui: Filtra tanto pela categoria quanto pelo texto digitado no input
   const exerciciosFiltrados = listaExerciciosDB.filter((ex) => {
-    if (categoriaSelecionada === "Todos") return true;
-    return ex.grupo_muscular === categoriaSelecionada;
+    const atendeCategoria =
+      categoriaSelecionada === "Todos" || ex.grupo_muscular === categoriaSelecionada;
+    const atendeTexto = ex.nome
+      .toLowerCase()
+      .includes(nomeExercicioInput.toLowerCase());
+
+    return atendeCategoria && atendeTexto;
   });
 
   function handleAddExercicio(): void {
@@ -75,7 +80,7 @@ export default function App() {
     }
 
     const jaAdicionado = exerciciosTreino.some(
-      (ex) => ex.nome.toLowerCase() === nomeFormatado.toLowerCase(),
+      (ex) => ex.nome.toLowerCase() === nomeFormatado.toLowerCase()
     );
 
     if (jaAdicionado) {
@@ -84,7 +89,7 @@ export default function App() {
     }
 
     const exercicioExistente = listaExerciciosDB.find(
-      (ex) => ex.nome.toLowerCase() === nomeFormatado.toLowerCase(),
+      (ex) => ex.nome.toLowerCase() === nomeFormatado.toLowerCase()
     );
 
     const grupoMuscular =
@@ -107,7 +112,7 @@ export default function App() {
 
   function handleRemoveExercicio(indexParaRemover: number): void {
     setExerciciosTreino((prev) =>
-      prev.filter((_, index) => index !== indexParaRemover),
+      prev.filter((_, index) => index !== indexParaRemover)
     );
     toast.info("Exercício removido");
   }
@@ -201,6 +206,7 @@ export default function App() {
             <div className="flex gap-2 w-full">
               <input
                 list="opcoes-exercicios"
+                autoComplete="off"
                 value={nomeExercicioInput}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setNomeExercicioInput(e.target.value)
