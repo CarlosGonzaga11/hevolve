@@ -7,9 +7,9 @@ import TrashPage from "./pages/trash";
 import Progress from "./pages/progress";
 import { Toaster } from "sonner";
 import LandingPage from "./pages/landingPage";
-import Register from "./pages/criarConta";
 import UserProfile from "./pages/userProfile";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import Register from "./pages/criarConta";
 
 export default function App() {
   return (
@@ -19,7 +19,6 @@ export default function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/registro" element={<Register />} />
 
-        {/* ✅ Sintaxe corrigida com a barra antes do asterisco (/*) */}
         <Route
           path="access_token=/*"
           element={<Navigate to="/dashboard/treino" replace />}

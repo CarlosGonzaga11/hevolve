@@ -21,45 +21,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (window.location.hash.includes("access_token")) {
-      const hashParams = new URLSearchParams(window.location.hash.replace("#", "?"));
-      const accessToken = hashParams.get("access_token");
-      const refreshToken = hashParams.get("refresh_token");
+    let isMounted = true;
 
-      if (accessToken && refreshToken) {
-        supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        }).then(({ data, error }) => {
-          if (!error && data.session) {
-            setUser(data.session.user);
-            window.location.hash = "#/dashboard/treino";
-          }
-        });
-      }
-    }
-
-    async function initAuth() {
+    async function handleAuth() {
       try {
+        // 1. Verifica se a URL retornada possui access_token do OAuth
+        const fullUrl = window.location.href;
+        if (fullUrl.includes("access_token=")) {
+          // Extrai o trecho do access_token mesmo se o HashRouter tiver bagunçado a hash
+          const hashString = fullUrl.substring(fullUrl.indexOf("access_token="));
+          const params = new URLSearchParams(hashString);
+          
+          const accessToken = params.get("access_token");
+          const refreshToken = params.get("refresh_token");
+
+          if (accessToken && refreshToken) {
+            // Força o Supabase a registrar a sessão no localStorage
+            const { data, error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+
+            if (!error && data.session && isMounted) {
+              setUser(data.session.user);
+              setLoading(false);
+              // Limpa a URL e envia o usuário para o dashboard
+              window.history.replaceState(null, "", import.meta.env.BASE_URL);
+              window.location.hash = "#/dashboard/treino";
+              return;
+            }
+          }
+        }
+
+        // 2. Se não houver tokens na URL, busca a sessão normalmente salva no storage
         const { data: { session } } = await supabase.auth.getSession();
-        setUser(session?.user ?? null);
+        if (isMounted) {
+          setUser(session?.user ?? null);
+        }
       } catch (error) {
-        console.error("Erro ao carregar sessão:", error);
+        console.error("Erro no processamento da autenticação:", error);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     }
 
-    initAuth();
+    handleAuth();
 
+    // 3. Listener global de mudanças de autenticação
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
+      if (isMounted) {
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
     });
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, []);
