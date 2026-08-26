@@ -22,7 +22,7 @@ export default function Register() {
     setErrorMessage(null);
 
     try {
-      const redirectUrl = `${window.location.origin}/dashboard/treino`;
+      const redirectUrl = `${window.location.origin}/hevolve/`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
