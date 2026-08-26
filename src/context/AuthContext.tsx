@@ -25,18 +25,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function handleAuth() {
       try {
-        // 1. Verifica se a URL retornada possui access_token do OAuth
-        const fullUrl = window.location.href;
-        if (fullUrl.includes("access_token=")) {
-          // Extrai o trecho do access_token mesmo se o HashRouter tiver bagunçado a hash
-          const hashString = fullUrl.substring(fullUrl.indexOf("access_token="));
-          const params = new URLSearchParams(hashString);
-          
+        const fullHash = window.location.hash;
+
+        if (fullHash.includes("access_token=")) {
+          const cleanHash = fullHash.includes("#/") 
+            ? fullHash.replace("#/", "") 
+            : fullHash.replace("#", "");
+
+          const params = new URLSearchParams(cleanHash);
           const accessToken = params.get("access_token");
           const refreshToken = params.get("refresh_token");
 
           if (accessToken && refreshToken) {
-            // Força o Supabase a registrar a sessão no localStorage
             const { data, error } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken,
@@ -45,15 +45,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (!error && data.session && isMounted) {
               setUser(data.session.user);
               setLoading(false);
-              // Limpa a URL e envia o usuário para o dashboard
-              window.history.replaceState(null, "", import.meta.env.BASE_URL);
+
               window.location.hash = "#/dashboard/treino";
               return;
             }
           }
         }
 
-        // 2. Se não houver tokens na URL, busca a sessão normalmente salva no storage
         const { data: { session } } = await supabase.auth.getSession();
         if (isMounted) {
           setUser(session?.user ?? null);
@@ -67,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     handleAuth();
 
-    // 3. Listener global de mudanças de autenticação
+    // 3. Listener global do Supabase
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
