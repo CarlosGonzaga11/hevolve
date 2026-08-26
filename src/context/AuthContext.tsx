@@ -21,7 +21,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Força a verificação da sessão salva ou do hash do OAuth
+    if (window.location.hash.includes("access_token")) {
+      const hashParams = new URLSearchParams(window.location.hash.replace("#", "?"));
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+
+      if (accessToken && refreshToken) {
+        supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        }).then(({ data, error }) => {
+          if (!error && data.session) {
+            setUser(data.session.user);
+            window.location.hash = "#/dashboard/treino";
+          }
+        });
+      }
+    }
+
     async function initAuth() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
