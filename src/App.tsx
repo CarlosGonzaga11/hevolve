@@ -19,15 +19,6 @@ export default function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/registro" element={<Register />} />
 
-        <Route
-          path="access_token=/*"
-          element={<Navigate to="/dashboard/treino" replace />}
-        />
-        <Route
-          path="/access_token=/*"
-          element={<Navigate to="/dashboard/treino" replace />}
-        />
-
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />}>
             <Route index element={<Navigate to="treino" replace />} />
@@ -40,6 +31,7 @@ export default function App() {
           </Route>
         </Route>
 
+        {/* Curinga para redirecionar rotas inexistentes */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
