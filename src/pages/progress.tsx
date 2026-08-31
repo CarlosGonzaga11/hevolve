@@ -258,9 +258,9 @@ export default function Progress() {
             Sua página de análise de evolução de carga
           </p>
         </div>
-        <div>
+        <span>
           <NotificationMenu />
-        </div>
+        </span>
       </div>
 
       <div className="px-6 mt-8">

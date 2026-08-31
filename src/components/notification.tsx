@@ -13,7 +13,7 @@ export function NotificationMenu() {
         className="relative p-2 rounded-xl bg-zinc-800/80 hover:bg-zinc-800 transition-colors text-zinc-300 hover:text-white border border-zinc-700/50"
         title="Histórico de Cargas"
       >
-        <Bell className="w-5 h-5" />
+        <Bell className="w-5 h-5 cursor-pointer transition-all ease-in-out" />
         {notificacoes.length > 0 && (
           <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-black animate-pulse">
             {notificacoes.length}
