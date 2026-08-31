@@ -30,8 +30,12 @@ export default function TreinoDetalhes() {
     setLoading,
   } = useTrain();
 
-  const [valoresAtuais, setValoresAtuais] = useState<Record<string, SerieEntrada>>({});
-  const [historicoAnterior, setHistoricoAnterior] = useState<Record<number, HistoricoItem>>({});
+  const [valoresAtuais, setValoresAtuais] = useState<
+    Record<string, SerieEntrada>
+  >({});
+  const [historicoAnterior, setHistoricoAnterior] = useState<
+    Record<number, HistoricoItem>
+  >({});
 
   const treino = listaTreinosSalvos.find((t) => Number(t.id) === Number(id));
 
@@ -91,7 +95,7 @@ export default function TreinoDetalhes() {
         const { data, error } = await supabase
           .from("series_executadas")
           .select(
-            "item_treino_id, peso, repeticoes, created_at, treinos_realizados!inner(user_id)"
+            "item_treino_id, peso, repeticoes, created_at, treinos_realizados!inner(user_id)",
           )
           .in("item_treino_id", itemIds)
           .eq("treinos_realizados.user_id", user.id)
@@ -102,14 +106,20 @@ export default function TreinoDetalhes() {
         if (data && isMounted) {
           const historicoTemp: Record<number, HistoricoItem> = {};
 
-          data.forEach((row: { item_treino_id: number; peso: number; repeticoes: number }) => {
-            if (!historicoTemp[row.item_treino_id]) {
-              historicoTemp[row.item_treino_id] = {
-                peso: row.peso || 0,
-                repeticoes: row.repeticoes || 0,
-              };
-            }
-          });
+          data.forEach(
+            (row: {
+              item_treino_id: number;
+              peso: number;
+              repeticoes: number;
+            }) => {
+              if (!historicoTemp[row.item_treino_id]) {
+                historicoTemp[row.item_treino_id] = {
+                  peso: row.peso || 0,
+                  repeticoes: row.repeticoes || 0,
+                };
+              }
+            },
+          );
 
           setHistoricoAnterior(historicoTemp);
         }
@@ -151,7 +161,7 @@ export default function TreinoDetalhes() {
     itemId: number,
     serieNum: number,
     campo: "peso" | "repeticoes",
-    valor: string
+    valor: string,
   ) => {
     if (valor === "") {
       setValoresAtuais((prev) => ({
@@ -226,7 +236,7 @@ export default function TreinoDetalhes() {
       const novas = await processarConquistas(
         count || 0,
         dadosParaHistorico,
-        mapaNomes
+        mapaNomes,
       );
 
       if (novas.length > 0) {
@@ -347,7 +357,7 @@ export default function TreinoDetalhes() {
                             item.id,
                             numeroSerie,
                             "peso",
-                            e.target.value
+                            e.target.value,
                           )
                         }
                         className="bg-zinc-800 rounded-md py-2 px-3 text-sm outline-none focus:border-green-500 border border-transparent text-white"
@@ -366,7 +376,7 @@ export default function TreinoDetalhes() {
                             item.id,
                             numeroSerie,
                             "repeticoes",
-                            e.target.value
+                            e.target.value,
                           )
                         }
                         className="bg-zinc-800 rounded-md py-2 px-3 text-sm outline-none focus:border-green-500 border border-transparent text-white"
@@ -380,7 +390,7 @@ export default function TreinoDetalhes() {
         })}
       </div>
 
-      <div className="fixed bottom-6 left-0 right-0 w-full px-6 max-w-4xl mx-auto z-20">
+      <div className="text-center bottom-6 left-0 right-0 w-full px-6 max-w-4xl mx-auto z-20">
         <button
           onClick={handleFinalizar}
           disabled={loading}

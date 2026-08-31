@@ -19,6 +19,11 @@ export interface DBExercicio {
   grupo_muscular: string;
 }
 
+// Limites recomendados para evitar estouro no banco/UI
+const MAX_EXERCICIOS_POR_FICHA = 25;
+const MAX_CHAR_NOME_TREINO = 50;
+const MAX_CHAR_NOME_EXERCICIO = 60;
+
 export default function App() {
   const [exerciciosTreino, setExerciciosTreino] = useState<ExercicioItem[]>([]);
   const [nomeExercicioInput, setNomeExercicioInput] = useState<string>("");
@@ -53,7 +58,6 @@ export default function App() {
     listaExerciciosDB: DBExercicio[];
   };
 
-  // Ajuste aqui: Filtra tanto pela categoria quanto pelo texto digitado no input
   const exerciciosFiltrados = listaExerciciosDB.filter((ex) => {
     const atendeCategoria =
       categoriaSelecionada === "Todos" || ex.grupo_muscular === categoriaSelecionada;
@@ -66,19 +70,49 @@ export default function App() {
 
   function handleAddExercicio(): void {
     const nomeFormatado = nomeExercicioInput.trim();
+
+    // 1. Validação de limite de itens na ficha
+    if (exerciciosTreino.length >= MAX_EXERCICIOS_POR_FICHA) {
+      toast.warning(`Limite máximo de ${MAX_EXERCICIOS_POR_FICHA} exercícios por ficha atingido.`);
+      return;
+    }
+
+    // 2. Validação de texto do exercício
     if (!nomeFormatado) {
       toast.error("Escreva ou selecione um exercício primeiro");
       return;
     }
 
-    const numSeries = Number(series);
-    const numReps = Number(repeticoes);
-
-    if (!numSeries || numSeries <= 0 || !numReps || numReps <= 0) {
-      toast.error("Informe valores válidos para séries e repetições");
+    if (nomeFormatado.length > MAX_CHAR_NOME_EXERCICIO) {
+      toast.error(`O nome do exercício deve ter no máximo ${MAX_CHAR_NOME_EXERCICIO} caracteres.`);
       return;
     }
 
+    // 3. Validação numérica de Séries e Repetições
+    const numSeries = Number(series);
+    const numReps = Number(repeticoes);
+
+    if (
+      isNaN(numSeries) ||
+      !Number.isInteger(numSeries) ||
+      numSeries <= 0 ||
+      numSeries > 99
+    ) {
+      toast.error("Informe um número de séries válido (entre 1 e 99)");
+      return;
+    }
+
+    if (
+      isNaN(numReps) ||
+      !Number.isInteger(numReps) ||
+      numReps <= 0 ||
+      numReps > 999
+    ) {
+      toast.error("Informe um número de repetições válido (entre 1 e 999)");
+      return;
+    }
+
+    // 4. Checagem de duplicidade
     const jaAdicionado = exerciciosTreino.some(
       (ex) => ex.nome.toLowerCase() === nomeFormatado.toLowerCase()
     );
@@ -118,8 +152,15 @@ export default function App() {
   }
 
   async function handleSaveFicha(): Promise<void> {
-    if (!nomeTreino.trim()) {
+    const nomeTreinoLimpo = nomeTreino.trim();
+
+    if (!nomeTreinoLimpo) {
       toast.warning("Dê um nome ao treino antes de salvar");
+      return;
+    }
+
+    if (nomeTreinoLimpo.length > MAX_CHAR_NOME_TREINO) {
+      toast.warning(`O nome do treino não pode ter mais de ${MAX_CHAR_NOME_TREINO} caracteres.`);
       return;
     }
 
@@ -130,7 +171,7 @@ export default function App() {
 
     try {
       setLoaderButton(true);
-      await salvarTreino(nomeTreino, exerciciosTreino);
+      await salvarTreino(nomeTreinoLimpo, exerciciosTreino);
       toast.success("Treino salvo com sucesso!", { position: "bottom-center" });
 
       setExerciciosTreino([]);
@@ -148,7 +189,7 @@ export default function App() {
 
   return (
     <div className="text-white pb-10 max-w-7xl mx-auto px-4 sm:px-6">
-      <div className="mt-12 sm:mt-10  mb-6">
+      <div className="mt-12 sm:mt-10 mb-6">
         <h1 className="sm:mt-0 mt-16 text-3xl uppercase font-extrabold tracking-tight text-[#22c55e]">
           Hevolve
         </h1>
@@ -169,6 +210,7 @@ export default function App() {
             </label>
             <input
               value={nomeTreino}
+              maxLength={MAX_CHAR_NOME_TREINO}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 setNomeTreino(e.target.value)
               }
@@ -207,6 +249,7 @@ export default function App() {
               <input
                 list="opcoes-exercicios"
                 autoComplete="off"
+                maxLength={MAX_CHAR_NOME_EXERCICIO}
                 value={nomeExercicioInput}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setNomeExercicioInput(e.target.value)
@@ -242,6 +285,7 @@ export default function App() {
               <input
                 type="number"
                 min="1"
+                max="99"
                 placeholder="Ex: 4"
                 className="bg-zinc-900 text-white border border-white/10 focus:border-[#22c55e] focus:outline-none px-3 py-2 rounded-lg text-sm"
                 value={series}
@@ -258,6 +302,7 @@ export default function App() {
               <input
                 type="number"
                 min="1"
+                max="999"
                 placeholder="Ex: 12"
                 className="bg-zinc-900 text-white border border-white/10 focus:border-[#22c55e] focus:outline-none px-3 py-2 rounded-lg text-sm"
                 value={repeticoes}

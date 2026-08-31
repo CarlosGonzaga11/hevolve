@@ -3,7 +3,6 @@ import {
   Dumbbell,
   FilePlus,
   LogOut,
-  MessageCircle,
   Trash,
   User,
   X,
@@ -89,15 +88,6 @@ export default function Dashboard() {
                 >
                   <BarChart3 size={20} />
                   <span>Progresso</span>
-                </NavLink>
-
-                <NavLink
-                  to="chat"
-                  onClick={() => setIsOpen(false)}
-                  className={getNavLinkClass}
-                >
-                  <MessageCircle size={20} />
-                  <span>Chat</span>
                 </NavLink>
 
                 <NavLink
@@ -197,11 +187,6 @@ export default function Dashboard() {
               <NavLink to="progress" className={getNavLinkClass}>
                 <BarChart3 size={20} />
                 <span>Progresso</span>
-              </NavLink>
-
-              <NavLink to="chat" className={getNavLinkClass}>
-                <MessageCircle size={20} />
-                <span>Chat AI</span>
               </NavLink>
 
               <NavLink to="create" className={getNavLinkClass}>

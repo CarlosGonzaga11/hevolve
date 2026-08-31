@@ -8,6 +8,7 @@ import Metric from "../components/cardMetric";
 import { Flame, Scale } from "lucide-react";
 import CardSemanal from "../components/cardSemanal";
 import { useAuth } from "../context/AuthContext";
+import { NotificationMenu } from "../components/notification";
 
 interface Exercicio {
   id: number;
@@ -18,16 +19,6 @@ interface Exercicio {
 interface DadoGrafico {
   data: string;
   carga: number;
-}
-
-interface SerieExecutadaJoin {
-  peso: number | string;
-  repeticoes?: number | string;
-  created_at?: string;
-  itens_treino?: {
-    exercicios?: Exercicio;
-    exercicio_id?: number;
-  } | null;
 }
 
 export default function Progress() {
@@ -61,20 +52,29 @@ export default function Progress() {
     async function calcularVolume() {
       if (!user) return;
       try {
-        const { data: series, error } = await supabase
-          .from("series_executadas")
-          .select("peso, repeticoes, treinos_realizados!inner(user_id)")
-          .eq("treinos_realizados.user_id", user.id);
+        const { data, error } = await supabase
+          .from("treinos_realizados")
+          .select(
+            `
+            series_executadas (
+              peso,
+              repeticoes
+            )
+          `,
+          )
+          .eq("user_id", user.id);
 
         if (error) throw error;
 
-        if (series) {
-          const tonelagemAcumulada = (
-            series as unknown as SerieExecutadaJoin[]
-          ).reduce((total, serie) => {
-            const peso = Number(serie.peso) || 0;
-            const reps = Number(serie.repeticoes) || 0;
-            return total + peso * reps;
+        if (data) {
+          const tonelagemAcumulada = data.reduce((total, treino) => {
+            const series = (treino.series_executadas as any[]) || [];
+            const volTreino = series.reduce((sub, s) => {
+              const peso = Number(s.peso) || 0;
+              const reps = Number(s.repeticoes) || 0;
+              return sub + peso * reps;
+            }, 0);
+            return total + volTreino;
           }, 0);
 
           setVolumeTotal(tonelagemAcumulada);
@@ -96,20 +96,21 @@ export default function Progress() {
         setLoadingGeral(true);
 
         const promiseExercicios = supabase
-          .from("series_executadas")
+          .from("treinos_realizados")
           .select(
             `
-            itens_treino (
-              exercicios (
-                id,
-                nome,
-                grupo_muscular
+            series_executadas (
+              itens_treino (
+                exercicios (
+                  id,
+                  nome,
+                  grupo_muscular
+                )
               )
-            ),
-            treinos_realizados!inner(user_id)
+            )
           `,
           )
-          .eq("treinos_realizados.user_id", user.id);
+          .eq("user_id", user.id);
 
         const promiseQuantidade = supabase
           .from("treinos_realizados")
@@ -128,16 +129,19 @@ export default function Progress() {
           const unicos: Exercicio[] = [];
           const idsVistos = new Set<number>();
 
-          resExercicios.data.forEach((item: any) => {
-            const ex = item.itens_treino?.exercicios;
-            if (ex && !idsVistos.has(ex.id)) {
-              idsVistos.add(ex.id);
-              unicos.push({
-                id: ex.id,
-                nome: sanitizarTexto(ex.nome),
-                grupo_muscular: sanitizarTexto(ex.grupo_muscular || ""),
-              });
-            }
+          resExercicios.data.forEach((treino: any) => {
+            const series = treino.series_executadas || [];
+            series.forEach((serie: any) => {
+              const ex = serie.itens_treino?.exercicios;
+              if (ex && !idsVistos.has(ex.id)) {
+                idsVistos.add(ex.id);
+                unicos.push({
+                  id: ex.id,
+                  nome: sanitizarTexto(ex.nome),
+                  grupo_muscular: sanitizarTexto(ex.grupo_muscular || ""),
+                });
+              }
+            });
           });
 
           setMeusExercicios(unicos);
@@ -185,8 +189,12 @@ export default function Progress() {
             `
             peso,
             created_at,
-            itens_treino!inner(exercicio_id),
-            treinos_realizados!inner(user_id)
+            itens_treino!inner (
+              exercicio_id
+            ),
+            treinos_realizados:treino_id!inner (
+              user_id
+            )
           `,
           )
           .eq("itens_treino.exercicio_id", idSelecionado)
@@ -195,25 +203,26 @@ export default function Progress() {
 
         if (error) throw error;
 
-        const agrupados = (
-          (data as unknown as SerieExecutadaJoin[]) || []
-        ).reduce((acc: Record<string, number>, item) => {
-          if (!item.created_at) return acc;
+        const agrupados = (data || []).reduce(
+          (acc: Record<string, number>, item: any) => {
+            if (!item.created_at) return acc;
 
-          const dataFormatada = new Date(item.created_at).toLocaleDateString(
-            "pt-BR",
-            {
-              day: "2-digit",
-              month: "2-digit",
-            },
-          );
+            const dataFormatada = new Date(item.created_at).toLocaleDateString(
+              "pt-BR",
+              {
+                day: "2-digit",
+                month: "2-digit",
+              },
+            );
 
-          const pesoAtual = Number(item.peso) || 0;
-          if (!acc[dataFormatada] || pesoAtual > acc[dataFormatada]) {
-            acc[dataFormatada] = pesoAtual;
-          }
-          return acc;
-        }, {});
+            const pesoAtual = Number(item.peso) || 0;
+            if (!acc[dataFormatada] || pesoAtual > acc[dataFormatada]) {
+              acc[dataFormatada] = pesoAtual;
+            }
+            return acc;
+          },
+          {},
+        );
 
         const formatados: DadoGrafico[] = Object.keys(agrupados).map(
           (dataStr) => ({
@@ -240,11 +249,18 @@ export default function Progress() {
 
   return (
     <div className="pb-10 bg-black min-h-screen text-white mt-6 sm:mt-0">
-      <div className="mt-12 px-6">
-        <h1 className="text-3xl font-extrabold text-[#22c55e] sm:mt-0 mt-16 uppercase  tracking-tight ">Progresso</h1>
-        <p className="mt-1 text-sm text-[#B3B3B3]">
-          Sua página de análise de evolução de carga
-        </p>
+      <div className="mt-12 px-6  flex justify-between">
+        <div>
+          <h1 className="text-3xl font-extrabold text-[#22c55e] sm:mt-0 mt-16 uppercase tracking-tight">
+            Progresso
+          </h1>
+          <p className="mt-1 text-sm text-[#B3B3B3]">
+            Sua página de análise de evolução de carga
+          </p>
+        </div>
+        <div>
+          <NotificationMenu />
+        </div>
       </div>
 
       <div className="px-6 mt-8">

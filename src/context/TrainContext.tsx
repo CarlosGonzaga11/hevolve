@@ -84,6 +84,16 @@ export type UltimaCarga = {
   created_at: string;
 };
 
+export type NotificacaoCarga = {
+  id: string;
+  exercicioNome: string;
+  pesoAnterior: number;
+  pesoNovo: number;
+  diferenca: number;
+  tipo: "aumento" | "queda" | "mantido";
+  data: Date;
+};
+
 export interface TrainContextType {
   listaTreinosSalvos: Ficha[];
   treinosDeletados: Ficha[];
@@ -103,21 +113,23 @@ export interface TrainContextType {
   salvarTreino: (nome: string, itens: ExercicioInput[]) => Promise<void>;
   atualizarSerie: (
     serieId: number,
-    novosDados: Partial<Serie>
+    novosDados: Partial<Serie>,
   ) => Promise<void>;
   finalizarTreino: (id: number) => Promise<void>;
   restaurarTreino: (id: number) => Promise<void>;
   excluirDefinitivamente: (id: number) => Promise<void>;
   buscarTreinosDeletados: () => Promise<void>;
   buscarProgressoExercicio: (
-    exercicioId: number
+    exercicioId: number,
   ) => Promise<ProgressoExercicio[]>;
   finalizarTreinoComHistorico: (
     fichaId: number,
-    dadosDasSeries: SerieExecutadaInput[]
+    dadosDasSeries: SerieExecutadaInput[],
   ) => Promise<void>;
   buscarUltimaCarga: (itemTreinoId: number) => Promise<UltimaCarga | null>;
   buscarDadosParaExecucao: (fichaId: number) => Promise<any>;
+  notificacoes: NotificacaoCarga[];
+  limparNotificacoes: () => void;
 }
 
 type TrainContextProps = {
@@ -135,6 +147,7 @@ export function TrainProvider({ children }: TrainContextProps) {
   const [treinosDeletados, setTreinosDeletados] = useState<Ficha[]>([]);
   const [listaExerciciosDB, setListaExerciciosDB] = useState<Exercicios[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [notificacoes, setNotificacoes] = useState<NotificacaoCarga[]>([]);
 
   useEffect(() => {
     if (user) {
@@ -144,6 +157,7 @@ export function TrainProvider({ children }: TrainContextProps) {
       setListaTreinosSalvos([]);
       setListaExerciciosDB([]);
       setTreinosDeletados([]);
+      setNotificacoes([]);
     }
   }, [user]);
 
@@ -151,6 +165,8 @@ export function TrainProvider({ children }: TrainContextProps) {
     if (typeof texto !== "string") return "";
     return texto.replace(/<[^>]*>?/gm, "").trim();
   }
+
+  const limparNotificacoes = () => setNotificacoes([]);
 
   async function buscarTodosExercicios(): Promise<void> {
     if (!user) return;
@@ -165,20 +181,27 @@ export function TrainProvider({ children }: TrainContextProps) {
   }
 
   async function buscarProgressoExercicio(
-    exercicioId: number
+    exercicioId: number,
   ): Promise<ProgressoExercicio[]> {
     if (!user) return [];
 
     const { data, error } = await supabase
       .from("series_executadas")
-      .select("peso, criada_em")
-      .eq("exercicio_id", exercicioId)
-      .eq("user_id", user.id)
-      .order("criada_em", { ascending: true });
+      .select(
+        `
+        peso, 
+        created_at,
+        itens_treino!inner(exercicio_id),
+        treinos_realizados:treino_id!inner(user_id)
+      `,
+      )
+      .eq("itens_treino.exercicio_id", exercicioId)
+      .eq("treinos_realizados.user_id", user.id)
+      .order("created_at", { ascending: true });
 
     if (error || !data) return [];
-    return data.map((set) => ({
-      data: new Date(set.criada_em).toLocaleDateString("pt-BR", {
+    return data.map((set: any) => ({
+      data: new Date(set.created_at).toLocaleDateString("pt-BR", {
         day: "2-digit",
         month: "2-digit",
       }),
@@ -206,7 +229,7 @@ export function TrainProvider({ children }: TrainContextProps) {
             nome
           )
         )
-      `
+      `,
       )
       .eq("user_id", user.id)
       .eq("deletado", false);
@@ -228,9 +251,9 @@ export function TrainProvider({ children }: TrainContextProps) {
           peso,
           repeticoes,
           numero_serie,
-          criada_em
+          created_at
         )
-      `
+      `,
       )
       .eq("ficha_id", fichaId)
       .eq("user_id", user.id);
@@ -253,22 +276,21 @@ export function TrainProvider({ children }: TrainContextProps) {
 
   async function atualizarSerie(
     serieId: number,
-    novosDados: Partial<Serie>
+    novosDados: Partial<Serie>,
   ): Promise<void> {
     if (!user) return;
 
     const { error } = await supabase
       .from("series_executadas")
       .update(novosDados)
-      .eq("id", serieId)
-      .eq("user_id", user.id);
+      .eq("id", serieId);
 
     if (error) console.error("Erro ao atualizar série:", error);
   }
 
   async function salvarTreino(
     nome: string,
-    itens: ExercicioInput[]
+    itens: ExercicioInput[],
   ): Promise<void> {
     if (!user) {
       toast.error("Você precisa estar logado para salvar um treino.");
@@ -321,7 +343,7 @@ export function TrainProvider({ children }: TrainContextProps) {
           series: Number(ex.series) || defaultSeries,
           repeticoes: Number(ex.repeticoes) || defaultReps,
         };
-      })
+      }),
     );
 
     const { data: ficha, error: errFicha } = await supabase
@@ -351,7 +373,7 @@ export function TrainProvider({ children }: TrainContextProps) {
 
   async function finalizarTreinoComHistorico(
     fichaId: number,
-    dadosDasSeries: SerieExecutadaInput[]
+    dadosDasSeries: SerieExecutadaInput[],
   ): Promise<void> {
     if (!user) return;
     try {
@@ -365,6 +387,43 @@ export function TrainProvider({ children }: TrainContextProps) {
       if (errValida || !fichaPertenceUser) {
         toast.error("Operação não autorizada.");
         return;
+      }
+
+      // Verificação da comparação de carga (Aumento, Queda ou Mantido)
+      const novasNotificacoes: NotificacaoCarga[] = [];
+      for (const s of dadosDasSeries) {
+        const pesoNovo = Number(s.peso);
+        if (pesoNovo < 0) continue;
+
+        const ultima = await buscarUltimaCarga(s.item_treino_id);
+        if (ultima) {
+          let tipo: "aumento" | "queda" | "mantido" = "mantido";
+          let diff = 0;
+
+          if (pesoNovo > ultima.peso) {
+            tipo = "aumento";
+            diff = pesoNovo - ultima.peso;
+          } else if (pesoNovo < ultima.peso) {
+            tipo = "queda";
+            diff = ultima.peso - pesoNovo;
+          }
+
+          const itemInfo = listaTreinosSalvos
+            .flatMap((f) => f.itens_treino || [])
+            .find((i) => i.id === s.item_treino_id);
+
+          const nomeEx = itemInfo?.exercicios?.nome || "Exercício";
+
+          novasNotificacoes.push({
+            id: `${s.item_treino_id}-${Date.now()}-${s.numero_serie}`,
+            exercicioNome: nomeEx,
+            pesoAnterior: ultima.peso,
+            pesoNovo,
+            diferenca: diff,
+            tipo,
+            data: new Date(),
+          });
+        }
       }
 
       const { data: treino, error: errTreino } = await supabase
@@ -383,7 +442,6 @@ export function TrainProvider({ children }: TrainContextProps) {
       const historico = dadosDasSeries.map((s) => ({
         treino_id: treino.id,
         item_treino_id: s.item_treino_id,
-        user_id: user.id,
         numero_serie: Number(s.numero_serie),
         peso: Number(s.peso),
         repeticoes: Number(s.repeticoes),
@@ -394,6 +452,10 @@ export function TrainProvider({ children }: TrainContextProps) {
         .insert(historico);
 
       if (errSeries) throw errSeries;
+
+      if (novasNotificacoes.length > 0) {
+        setNotificacoes((prev) => [...novasNotificacoes, ...prev]);
+      }
 
       await supabase
         .from("fichas")
@@ -484,21 +546,32 @@ export function TrainProvider({ children }: TrainContextProps) {
   }
 
   async function buscarUltimaCarga(
-    itemTreinoId: number
+    itemTreinoId: number,
   ): Promise<UltimaCarga | null> {
     if (!user) return null;
 
     const { data, error } = await supabase
       .from("series_executadas")
-      .select("peso, repeticoes, created_at")
+      .select(
+        `
+        peso, 
+        repeticoes, 
+        created_at,
+        treinos_realizados:treino_id!inner(user_id)
+      `,
+      )
       .eq("item_treino_id", itemTreinoId)
-      .eq("user_id", user.id)
+      .eq("treinos_realizados.user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
     if (error || !data) return null;
-    return data as UltimaCarga;
+    return {
+      peso: data.peso,
+      repeticoes: data.repeticoes,
+      created_at: data.created_at,
+    } as UltimaCarga;
   }
 
   return (
@@ -528,6 +601,8 @@ export function TrainProvider({ children }: TrainContextProps) {
         listaExerciciosDB,
         loading,
         setLoading,
+        notificacoes,
+        limparNotificacoes,
       }}
     >
       {children}
