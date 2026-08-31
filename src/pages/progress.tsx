@@ -241,7 +241,7 @@ export default function Progress() {
   return (
     <div className="pb-10 bg-black min-h-screen text-white mt-6 sm:mt-0">
       <div className="mt-12 px-6">
-        <h1 className="text-3xl font-bold text-[#22c55e]">Progresso</h1>
+        <h1 className="text-3xl font-extrabold text-[#22c55e] sm:mt-0 mt-16 uppercase  tracking-tight ">Progresso</h1>
         <p className="mt-1 text-sm text-[#B3B3B3]">
           Sua página de análise de evolução de carga
         </p>

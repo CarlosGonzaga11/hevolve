@@ -148,8 +148,8 @@ export default function App() {
 
   return (
     <div className="text-white pb-10 max-w-7xl mx-auto px-4 sm:px-6">
-      <div className="mt-12 sm:mt-10 mb-6">
-        <h1 className="text-3xl uppercase font-extrabold tracking-tight text-[#22c55e]">
+      <div className="mt-12 sm:mt-10  mb-6">
+        <h1 className="sm:mt-0 mt-16 text-3xl uppercase font-extrabold tracking-tight text-[#22c55e]">
           Hevolve
         </h1>
         <p className="text-zinc-400 text-sm mt-1">

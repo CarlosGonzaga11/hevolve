@@ -81,7 +81,7 @@ export default function TrashPage() {
     <div className="text-white flex flex-col w-full min-h-screen bg-black pb-12">
       <div className="mt-12 px-6 flex justify-between items-end mb-6">
         <div>
-          <h1 className="text-3xl uppercase font-bold tracking-tighter sm:mt-0 mt-6 text-white">
+          <h1 className="text-3xl uppercase font-extrabold tracking-tighter sm:mt-0 mt-6  text-[#22c55e]">
             Lixeira
           </h1>
           <p className="text-zinc-500 text-sm mt-1">Treinos removidos temporariamente</p>

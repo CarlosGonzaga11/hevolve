@@ -86,7 +86,7 @@ const handleLoginGoogle = async () => {
 
   return (
     <div className="flex flex-col w-full text-[#FAFAFA] min-h-screen bg-black pb-12">
-      <div className="mt-12 px-6 flex items-center gap-4">
+      <div className="mt-16  px-6 flex items-center gap-4">
         {fotoPerfil ? (
           <img
             src={fotoPerfil}
